@@ -1,0 +1,132 @@
+1、java
+    1】main
+package com.example.activitytest;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class FirstActivity extends BaseActivity {
+    //Fruit类型列表
+    private List<Fruit> fruitList = new ArrayList<>();
+    //Fruit名称数组
+    private String[] fruitsName = new String[] {"Apple", "Banana", "Orange", "Watermelon", "Pear", "Grape", "Pineapple", "Strawberry", "Cherry", "Mango", "Apple", "Banana",
+            "0range", "Watermelon","Pear","Grape", "Pineapple", "Strawberry", "Cherry"};
+    //Fruit名称对于图片id
+    private int[] fruitsImageId = new int[] {};
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.first_layout);  //为活动加载布局文件
+        initFruits();  //初始化Fruits列表（初始化数据）
+        RecyclerView recyclerView = findViewById(R.id.recycler_view);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);  //创建一个线性布局对象
+        recyclerView.setLayoutManager(layoutManager);  //指定recyclerView的排列方式
+        RecyFruitAdaper adaper = new RecyFruitAdaper(fruitList);  //创建并初始化适配器
+        recyclerView.setAdapter(adaper);
+
+    }
+    private void initFruits() {  //针对fruitList的初始化
+        for (int i=0; i<fruitsName.length ;i++) {
+            Fruit fruit = new Fruit(fruitsName[i], R.mipmap.ic_launcher);
+            fruitList.add(fruit);
+        }
+
+    }
+}
+
+    2】适配器类
+package com.example.activitytest;
+
+import android.content.Context;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.List;
+
+public class RecyFruitAdaper extends RecyclerView.Adapter<RecyFruitAdaper.ViewHolder> {
+
+    private List<Fruit> mFruitList;
+
+    static class ViewHolder extends RecyclerView.ViewHolder {  //定义一个内部类，继承RecyclerView.ViewHolder
+        ImageView fruitImage;
+        TextView fruitName;
+
+        public ViewHolder(View view) {  //view通常是RecyclerView子项的最外层布局
+            super(view);
+            fruitImage = view.findViewById(R.id.fruit_image);
+            fruitName = view.findViewById(R.id.fruit_name);
+        }
+    }
+
+    public RecyFruitAdaper(List<Fruit> fruitList) {  //把要展示的数据源传出去
+        mFruitList = fruitList;
+    }
+
+    @Override
+    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {  //创建ViewHolder实例
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.fruit_item, parent
+                , false);  //加载布局，第一个参数为布局文件
+        ViewHolder holder = new ViewHolder(view);  //此处创建的实例传递到了ViewHolder构造函数中
+        return holder;
+    }
+
+    @Override
+    public void onBindViewHolder(ViewHolder holder, int position) {   //用于对 RecyclerView 子项的数据进行赋值，会在每个子项滚动到屏幕中是被调用
+        Fruit fruit = mFruitList.get(position);  //获取子项实例
+        holder.fruitImage.setImageResource(fruit.getImageId());  //设置数据
+        holder.fruitName.setText(fruit.getName());  //设置数据
+    }
+
+    @Override
+    public int getItemCount() {
+        return mFruitList.size();  //获取RecyclerView有多少个子项（长度）
+    }
+}
+
+    3】子项布局
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <ImageView
+        android:id="@+id/fruit_image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/fruit_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginLeft="10dp"/>
+
+</LinearLayout>

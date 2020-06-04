@@ -1,0 +1,72 @@
+main java
+
+    package com.example.table;
+
+    import androidx.appcompat.app.AppCompatActivity;
+    import androidx.fragment.app.Fragment;
+    import androidx.fragment.app.FragmentManager;
+    import androidx.fragment.app.FragmentTransaction;
+
+    import android.os.Bundle;
+    import android.view.View;
+    import android.widget.Button;
+    import android.widget.FrameLayout;
+
+    public class MainActivity extends AppCompatActivity {
+
+        @Override
+        protected void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            setContentView(R.layout.activity_main);
+            Button button = findViewById(R.id.button);
+    //        replaceFragment(new RightFragment());
+            button.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    replaceFragment((new AnotherRightFragment()));
+                }
+            });
+        }
+
+        private void replaceFragment(Fragment fragment) {  //动态添加碎片
+            FragmentManager fragmentManager = getSupportFragmentManager();  //获取FragmentManager
+
+            RightFragment rightFragment = (RightFragment) fragmentManager.findFragmentById(R.id.right_fragment);  //获取碎片中的碎片实例
+
+            FragmentTransaction transaction = fragmentManager.beginTransaction();  //开启一个事务
+            transaction.replace(R.id.right_layout, fragment);  //像容器内添加或替换碎片
+            transaction.addToBackStack(null);  //添加事务到返回栈，参数用于描述返回栈状态，一般用null
+            transaction.commit();  //提交事务
+        }
+    }
+
+main xml
+
+    <?xml version="1.0" encoding="utf-8"?>
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".MainActivity">
+
+        <fragment
+            android:id="@+id/left_fragment"
+            android:name="com.example.table.LeftFragment"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"/>
+
+        <fragment
+            android:id="@+id/right_fragment"
+            android:name="com.example.table.RightFragment"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"/>
+        <FrameLayout
+            android:id="@+id/right_layout"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"/>
+
+    </LinearLayout>

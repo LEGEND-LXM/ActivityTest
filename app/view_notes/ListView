@@ -1,0 +1,141 @@
+一、java文件
+
+package com.example.activitytest;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class FirstActivity extends BaseActivity {
+    //Fruit类型列表
+    private List<Fruit> fruitList = new ArrayList<>();
+    //Fruit名称数组
+    private String[] fruitsName = new String[] {"Apple", "Banana", "Orange", "Watermelon", "Pear", "Grape", "Pineapple", "Strawberry", "Cherry", "Mango", "Apple", "Banana",
+            "0range", "Watermelon","Pear","Grape", "Pineapple", "Strawberry", "Cherry"};
+    //Fruit名称对于图片id
+    private int[] fruitsImageId = new int[] {};
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.first_layout);  //为活动加载布局文件
+        initFruits();  //初始化Fruits列表（初始化数据）
+        FruitAdaper adaper = new FruitAdaper(FirstActivity.this, R.layout.fruit_item, fruitList);
+        ListView listView = findViewById(R.id.list);
+        listView.setAdapter(adaper);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Fruit fruit = fruitList.get(position);  //获取被点击的子项
+                Toast.makeText(FirstActivity.this, fruit.getName(), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+    }
+    private void initFruits() {  //针对fruitList的初始化
+        for (int i=0; i<fruitsName.length ;i++) {
+            Fruit fruit = new Fruit(fruitsName[i], R.mipmap.ic_launcher);
+            fruitList.add(fruit);
+        }
+
+    }
+}
+
+二、适配器类
+    package com.example.activitytest;
+
+    import android.content.Context;
+    import android.view.LayoutInflater;
+    import android.view.View;
+    import android.view.ViewGroup;
+    import android.widget.ArrayAdapter;
+    import android.widget.ImageView;
+    import android.widget.TextView;
+
+    import androidx.annotation.NonNull;
+    import androidx.annotation.Nullable;
+
+    import java.util.List;
+
+    public class FruitAdaper extends ArrayAdapter<Fruit> {
+
+        private int resourceId;
+
+        public FruitAdaper(Context context, int textViewResourceID
+                , List<Fruit> objects) {    //重写构造方法，参数依次为 ：上下文对象、子项ID、数据
+            super(context, textViewResourceID, objects);
+
+            resourceId = textViewResourceID;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {  //此方法在每个子项被滚动到中屏幕时会被调用
+    //        return super.getView(position, convertView, parent);
+            Fruit fruit = getItem(position);  //获取当前项的Fruit实例
+            View view;  //优化运行 1
+            ViewHolder viewHolder;  //优化运行 2
+            if (convertView == null) {  //优化运行 1
+                 view = LayoutInflater.from(getContext()).inflate(resourceId, parent, false);
+                 viewHolder = new ViewHolder();  //优化运行 2
+                 viewHolder.fruitImage = view.findViewById(R.id.fruit_image);  //优化运行 2
+                 viewHolder.fruitName = view.findViewById(R.id.fruit_name);  //优化运行 2
+                 view.setTag(viewHolder);  //将viewHolder存储在view中
+            }
+            else {
+                view = convertView;  //优化运行 1
+                viewHolder = (ViewHolder) view.getTag();  //重新获取viewHolder，优化运行 2
+
+            }
+
+    //        ImageView fruitImage = view.findViewById(R.id.fruit_image);  //优化 2 淘汰
+    //        TextView fruitName = view.findViewById(R.id.fruit_name);  //优化 2 淘汰
+    //        fruitImage.setImageResource(fruit.getImageId());  //优化 2 淘汰
+    //        fruitName.setText(fruit.getName());  //优化 2 淘汰
+            viewHolder.fruitImage.setImageResource(fruit.getImageId());  //优化运行 2
+            viewHolder.fruitName.setText(fruit.getName());  //优化运行 2
+            return view;
+        }
+
+        class ViewHolder {  //优化运行 2
+            ImageView fruitImage;  //优化运行 2
+            TextView fruitName;  //优化运行 2
+        }
+    }
+
+三、子项布局
+    <?xml version="1.0" encoding="utf-8"?>
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/fruit_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/fruit_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginLeft="10dp"/>
+
+    </LinearLayout>

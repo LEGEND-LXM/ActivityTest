@@ -1,0 +1,1009 @@
+Android学习笔记
+一、基础部分
+    1、日志工具使用 ：用于打印重要信息
+        1】常用的五种使用方式 ：
+            1-- Log.v(tag:str, meg:str) : 第一个参数为过滤信息第二个为打印内容，对应级别verbose，优先级最低,用以打印最为琐碎的、意义最小的日志信息。
+            2-- Log.d(tag:str, meg:str) : 第一个参数为过滤信息第二个为打印内容，对应级别debug，优先级比verbose高，打印调试信息
+            3-- Log.i(tag:str, meg:str) : 第一个参数为过滤信息第二个为打印内容，对应级别info，优先级比debug高，打印重要的数据
+            4-- Log.w(tag:str, meg:str) : 第一个参数为过滤信息第二个为打印内容，对应级别warn，优先级比info高，打印警告信息
+            5-- Log.e(tag:str, meg:str) : 第一个参数为过滤信息第二个为打印内容，对应级别error，优先级比warn高，打印错误信息
+        2】设置过滤选项 ：从日志中过滤出有用信息
+            最下方左侧展示框中的 logcat 选项栏，可设置优先级以及类型，设置优先级是设定显示的最低优先级
+二、活动 ：Activity
+    1、什么是活动
+        一个活动包含多个控件，它是应用的一个屏显示内容
+    2、活动的基本用法
+        1】创建新活动 ：
+            1-- 进入project模式，进入app->src->main->java->com.example.activitytest
+            2-- 右键com.example.activitytest，选择New->Activity->需要创建的活动类型
+              两个复选框 ：（第一次创建时未选择，下面为手动配置过程）
+                Generate Layout File : 创建一个对应布局文件
+                Launcher Activity : 设置此活动为当前项目主活动
+        2】创建和加载布局
+            创建布局 ：
+            1-- 在app->src->main->res下创建一个名为layout的目录，用以存放layout布局文件
+                    右键 res ，New->Directory
+            2-- 右键layout，New->Android Resource File ,创建布局文件
+            加载布局 ：
+            1-- setContentView(layout_id);  //为活动加载布局文件
+        3】在AndroidManifest文件中注册
+            1-- 普通注册 ：
+                <activity android:name=".FirstActivity"></activity>  只需要注册通过android:name设置活动名称
+                         .FirstActivity ：com.example.activitytest.FirstActivity的缩写
+            2-- 注册为主活动 ：
+                <activity android:name=".FirstActivity"
+                            android:label="Demo">   //添加标题，活动最上部显示内容
+                            <intent-filter>
+                                <action android:name="android.intent.action.MAIN"/>
+                                <category android:name="android.intent.category.LAUNCHER" />
+                            </intent-filter>
+                        </activity>
+
+    3、活动中使用Toast ：用以显示短小的信息，这些信息将在一段时间后自动消失
+        1-- 语法 ：
+            Toast.makeText(Context, meg:string, time).show();
+                1-  Context : 上下文对象
+                2- meg ：显示的主题，字符串
+                3- time ：显示时长，可选参数--Toast.LENGTH_SHORT、Toast.LENGTH_LONG
+
+    4、在活动中使用Menu ：适用于有很多菜单需要显示的情况
+        1-- 使用流程
+            1- 在res下新建一个Directory,命名为mnue，在其中新建一个Android Resource File，命名为main
+            2- 添加 <item> 标签来创建一个具体的菜单项，android:id 设置标识符， android:title 设置菜单项名称
+            3- 回到活动的.java文件中重写 onCreateOptionsMenu()方法，如下 ：
+                @Override
+                    public boolean onCreateOptionsMenu(Menu menu) {
+                        getMenuInflater().inflate(R.menu.main, menu);
+                        return true;
+                    }
+                getMenuInflater() ：得到MenuInflater对象
+                inflate() ：给当前活动创建菜单，第一个参数为id标识符，用于指定菜单资源文件；第二个为被添加菜单的对象，此处使用传回来的对象。
+                返回值表示是否允许显示菜单，true为允许
+
+        2-- 获取菜单选择的内容
+            重写 onOptionsItemSelected() ,示例代码如下 ：
+                public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+                        switch(item.getItemId()) {
+                            case R.id.add_item :
+                                Toast.makeText(this, "Add", Toast.LENGTH_SHORT).show();
+                                break;
+                            case R.id.remove_item :
+                                Toast.makeText(this, "Remove", Toast.LENGTH_SHORT).show();
+                                break;
+                            default:
+                        }
+                        return true;
+                    }
+                此处用id来进行判断，getItemId（）--获取被选中item的id，返回值为true表示显示菜单
+        3-- 调用setContentView(layout_id) 显示布局文件
+            切换
+    5、销毁一个活动
+        调用finish()方法即可
+
+    6、使用Intent在活动见传递数据
+        1】关于Intent ：
+            Intent是Android程序中各组件之间进行交互的一种重要方式，它不仅可以指明当前组件想要执行的动作，还可以在不同组件之间传递数据。
+          Intent 一般可被用于启动活动、启动服务以及发送广播等场景。
+        2】分类 ：
+            1-- 显式 Intent 使用方法：
+              【*】明确指明要启动的活动
+                1- 构造函数 ：Intent(Context packageContext, Class<?>)
+                    第一个参数 ：启动活动的上下文对象（注意：不是被启动对象），例如 ：FirstActivity.this
+                    第二个参数 ：被启动活动的类，例 ：SecondActivity.class
+                2- 调用 startActivity(intent) : 打开一个活动
+                    参数为Intent对象
+                3- 历程 ：
+                    Intent intent = new Intent(FirstActivity.this, SecondActivity.class);  //创建Intent对象
+                    startActivity(intent);  //开启另一个活动
+            2-- 隐式 Intent 使用方法：
+              【*】不明确指明要开启的活动，只是指明一系列抽象的action和category等信息，然后交由系统去分析找出合适的活动起动
+                1- 合适的活动 ：可以响应我们这个隐式Intent的活动
+                2- 一个活动可以设置多个category，但只能设定一个action，匹配是需要匹配所有的 action、category，
+                3- 示例 ：
+                    活动注册配置文件 ：
+                         <activity android:name=".SecondActivity">
+                            <intent-filter>
+                                <action android:name="com.example.activitytest.ACTION_START" />
+                                <category android:name="android.intent.category.DEFAULT" />
+                                <category android:name="com.example.activitytest.MY_CATEGORY" />
+                            </intent-filter>
+                         </activity>
+
+                    .java文件中 ：
+                        Intent intent = new Intent("com.example.activitytest.ACTION_START");
+                        intent.addCategory("com.example.activitytest.MY_CATEGORY");
+                        startActivity(intent);
+                      初始化时参数为action的匹配型，addCategory()为添加category，可添加多个
+                      android.intent.category.DEFAULT为category的默认值，设定为这个可以不用添加
+                4- 更多隐式Intent的用法 ：可以启动别的程序中的活动
+                    1]示例 ：点击按钮用浏览器访问某网站
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setData(Uri.parse("http://www.baidu.com"));
+                        startActivity(intent);
+                      Intent.ACTION_VIEW : Android的内部动作，其常量值为 ：android.intent.action.VIEW
+                      Uri.parse(string) ：将内容解析为uri对象
+                      setData ：将Uri对象传递进去，指定当前Intent正在操作的对象，只能接受Uri对象
+                    2]我们还可以在<intent-filter>标签中在配置一个<data>标签，用来精确指定当前活动能够影响的数据类型 ：
+                        可配置选项 ：
+                            android:scheme ：用于指定数据的协议部分，例如 ：http
+                            android:host ：用于指定数据的主机名部分，例如 ：www.baidu.com
+                            android:port ：用于指定数据的端口部分，一般紧随主机名之后，例如 ：8080
+                            android:path ：用于指定主机名和端口之后的部分，如一段网址或域名之后的东西
+                            android:mimeType ：用于指定可以处理的数据类型，允许使用通配符进行指定。
+                        只有当<data>标签与Intent中的Data一致时当前活动才能够响应该Intent，不建议设置太多的限制项，
+                      例如上述例子只需要设置协议为http即可
+                    3]如果匹配到多个可响应活动，会议列表的形式展示，选择合适的一项即可
+                   【*】除了http外还可以指定其他协议 ：
+                        geo ：显示地理位置
+                        tel ：表示拨打电话，调用示例 ：intent.setData(Uri.parse("tel:10086"));
+
+    7、向下一个活动传递数据
+        1】流程 ：
+            创建Intent对象 -> 将数据暂存在Intent中 -> 利用Intent开启下一个活动 -> 取出数据
+        2】暂存数据 ：putExtra()方法
+            putExtra(key, value) : 第一个参数为键，第二个为传递的数据
+        3】示例 ：
+            发送方 ：
+                Intent intent = new Intent(FirstActivity.this, SecondActivity.class);
+                intent.putExtra("data", "GOOD");  //以键值对的形式暂存
+                startActivity(intent);
+            接收方 ：
+                Intent intent = getIntent();  //获取启动此活动的Intent
+                String string = intent.getStringExtra("data");  //获取键对应的数据，不同类型的数据对应不同的方法，例：getIntExtra()获取整形数据
+
+    8】返回数据给上一个活动
+        1】启动活动 ：用startActivityForResult()方法来启动，此方法会在活动销毁时返回一个结果给上一个活动
+            参数1 ：Intent对象
+            参数2 ：请求码，用于在回调中判断数据的来源
+        2】相关方法 ：
+            startActivityForResult(Intent, 请求码(int)) ；用来打开活动，用此方法启动活动可以接收被启动活动返回的数据
+            setResult(返回结果, Intent) : 用于返回数据给上一个活动，参数1常用值：RESULT_OK、RESULT_CANCELED
+            onActivityResult(requestCode, resultCode, data) : 在上一个活动中重写，回调此函数来接收返回的数据
+                参数1-requestCode ：启动活动时传入的请求码
+                参数2-resultCode ：返回数据时传入的返回结果
+                参数3-data ：携带返回数据的Intent
+               【*】由于在一个活动中有可能调用startActivityForResult()方法去启动很多不同的活动,每一个活动返回的数据都会回调到onActivityResult()这
+                 个方法中，因此我们首先要做的就是通过检查requestCode的值来判断数据来源。确定数据是从SecondActivity返回的之后,我们再通过
+                 resultCode的值来判断处理结果是否成功。最后从data中取值并打印出来，这样就完成了向上一个活动返回数据的工作。
+        3】示例 ：
+            启动活动 ：
+                启动活动部分：可携带数据启动，方法和上述一致，注意启动方法差异即可
+                    Intent intent = new Intent(FirstActivity.this, SecondActivity.class);
+                    startActivityForResult(intent, 1);
+                接收返回数据部分：
+                     @Override
+                    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+                        super.onActivityResult(requestCode, resultCode, data);  //注意此句不可删除
+                        switch (requestCode) {  //判断请求码
+                            case 1:
+                                if (resultCode == RESULT_OK) {  //判断返回状态
+                                    String string = data.getStringExtra("first");  //提取数据
+                                    Toast.makeText(this, string, Toast.LENGTH_SHORT).show();  //显示
+                                }
+                                break;
+                            default:
+                        }
+                    }
+            被启动活动 ：
+                Intent intent = new Intent();  //创建Intent对象用来暂存数据
+                intent.putExtra("first", "Android Studio");  //暂存数据
+                setResult(RESULT_OK, intent);  //返回带有数据的Intent
+                finish();  //结束活动
+              上述代码是利用按钮点击来完成参数传递，如果直接按返回键则无法用调用上述部分，此时可以重写onBackPressed()方法
+            其他部分和上述相同，按下返回键会调用onBackPressed()方法
+    8、活动的生命周期
+        1】返回栈
+            1）定义 ：Android的活动是使用任务(Task)来管理的，一个任务就是一组存放在栈里活动的集合，这个栈就是返回栈
+                栈 ：栈是一种先入后出的数据结构
+            2）活动与栈 ：我们每启动一个新活动，他就会进入返回栈中，并且处于栈顶的位置，当我们销毁活动或按下back时，处于栈顶的活动就会出栈，前一个入栈的活动就会处于栈顶
+                      系统总是会显示处于栈顶的活动。
+        2】活动状态 ：
+            1）运行状态 ：活动处于栈顶的状态
+            2）暂停状态 ：不在处于栈顶，但仍可见（并不是每一个活动都需要占满整个屏幕，某些活动只会占用一部分屏幕，但不处于栈顶了，处于此状态的活动那个仍然存活）
+            3）停止状态 ：当一个活动不再处于栈顶且完全不可见时，系统仍会为这种活动保存相关的状态和成员变量，但不可靠，这部分内存可能会被占用
+            4）销毁状态 ：从返回栈中移除后，系统会回收此状态活动的内存
+        3】活动的生命周期 ：
+            1）onCreate() ：此方法会在活动第一次被创建的时候被调用，它完成活动的初始化，例如：布局加载、绑定事件
+            2）onStart() ：在活动由不可见变为可见时被调用
+            3）onResume() ：在活动准备好和用户进行交互时被调用，此活动一定处于栈顶，并且处于运行状态
+            4）onPause() ：系统准备去启动或者恢复另一个活动时被调用，我会通常会将一些消耗CPU的资源释放掉，以及保存关键数据(这个方法执行的速度一定要快，否则会影响新的栈顶活动)
+            5）onStop() ：在活动完全不可见时调用，它和onPause()的区别在于如果启动的新活动是一个对话框式的活动，那么onPause() 方法会得到执行，而onStop()方法并不会执行。
+            6）onDestroy() ：在活动被销毁前调用，之后互动会变为销毁状态
+            7）onRestart() ：在活动由停止状态变为运行状态之前调用（活动被重新启动）
+          完整生存期 ：活动在onCreate()和onStop()之间经历的就是完整生存期。活动会在onCreate()完成初始化，在onDestroy()中完成释放内存
+          可见生存期 ：活动在onStart()和onStop()之间经历的就是可见生存期，在这一阶段，活动总是可见的，即便可能无法与用户进行交互。我们可以在
+                onStart()进行资源加载，在onStop()进行资源释放。
+          前台生存期 ：活动在onResume()和onPause()之间经历的就是前台生存期。在此期间，活动总处于运行状态，此时活动可以与用户进行交互。
+        4】体验活动的生命周期 ：
+            1）打开活动的生命周期 ：
+                onCreate -> onStart -> onResume -中途开启其他活动-> onPause -> onStop -关闭开启的活动-> onRestart -> onStart -> onResume -关闭此活动-> onPause -> onStop -> onDestroy
+            2）打开对话框的生命周期 ：
+                onCreate -> onStart -> onResume -中途开启对话框-> onPause  -关闭开启的对话框-> onResume -关闭此活动-> onPause -> onStop -> onDestroy
+        5】活动的回收机制 ：
+            1）当你在活动A下启动活动B时，活动A处于停止状态，由于内存不足，活动A被回收，此时你按下Back返回到活动A，你执行的不是onRestart，而是onCreate，现在的活动A时重新创建的活动A，
+            之前所输入的临时信息会被抹除。
+            2）(重写)onSaveInstanceState() ：此方法会保证在活动被回收前一定会被调用，可以解决上述问题，onSaveInstanceState()会携带一个Bundle类型的参数
+                Bundle中提供了很多方法用来保存数据 ：
+                    保存整形 ：putInt(key,value)
+                    保存字符串 ：putString(key,value)
+            3）使用方法 ：
+                1-- 通过onSaveInstanceState()将需要保存的数据保存 -> 如果被回收则通过onCreate()方法的savedInstanceState参数进行复原
+              【*】进行复原之前需要进行非空判断 --- 判断savedInstanceState是否非空
+                2-- 通过savedInstanceState的getString(key)、getInt(key)等方法来获取保存的数据
+                3-- 恢复到相应位置
+            4）小知识 ：
+                Bundle 可与 Intent 联合使用 ：将数据保存至Bundle，然后将Bundle绑定至Intent，然后再被启动活动中获取Intent，最后提取出Bundle
+    9、活动的启动模式 ：
+        活动的启动模式可以在AndroidManifest.xml中通过给<activity>标签指定android:launchMode属性来设置
+        1】standard 启动模式
+            1）此方式是活动的默认启动方式，再不进行显示指定的情况下，所有活动都会按照此方式启动，再次方式下，每启动一个活动就会入栈处于栈顶的位置，
+            它不在乎这个活动是否已经处于栈顶（不在乎是否已经启动了此活动），每次都会创建一个新的实例。
+            2）示例 ：活动重复启动它自己
+                    start_normal.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent(FirstActivity.this, FirstActivity.class);
+                        startActivity(intent);
+                    }
+                });
+        2】singleTop 启动模式
+            1）简介 ：当活动被启动时，如果发现自己处于返回栈栈顶，则认为可以直接使用它，不会创建新的实例
+            2）示例 ：
+                注册配置 ：android:launchMode="singleTop"
+                .java文件和正常启动相同
+            3）注意 ：如果你在活动A(启动模式为singleTop)启动活动B，然后在活动B中启动活动A，他会创建一个活动A的实例，但是这个活动A与前一个活动A不是同一个，此时你的返回栈中有两个活动A
+        3】singleTask 启动模式
+            1）简介 ：当需要启动活动时，他会在栈内检查是否存在该活动实例，如果有，则将它上面的活动全部出栈，然后使它置于栈顶如果没有就创建一个新的实例
+            2）使用时配置launchMode属性即可
+        4】singleInstance 启动模式（此方式最复杂）
+            1）简介 ：此模式下的活动在启动时会创建一个新的返回栈来管理这个活动（如果singleTask模式指定了不同的taskAffinity，也会启动一个新的返回栈）。
+                这种模式适用于一个活动允许被其他程序调用，其他的程序可以共享此活动。每个应用程序都有自己的返回栈，同一个活动在进入不同栈时会创建新的实例，
+                使用此模式可以实现其他应用程序访问这个活动时公用同一个返回栈，实现了共享活动实例。
+            2）使用时设定对应模式即可
+    10、活动的使用
+        1】获取当前活动
+            在包com.example.activitytest中新建一个java类，名称自定义此处为BaseActivity，然后继承至AppCompatActivity，重写onCreate方法，在其中加入
+          Log.d("BaseActivity", getClass().getSimpleName()); 此句会获取并在日志中打印当前活动的类名，然后让其他的java类继承BaseActivity，这样也不会影响其他的功能
+        2】随时随地退出
+            创建一个专门的集合类去对所有的活动进行管理，在其中添加对应的活动管理方法
+          1）实现流程 ：
+            1-- 创建集合管理类 ：ActivityCollector
+            2-- 在这个集合类中编写相关方法，具体参考对于.java文件
+            3-- 为了保证程序完全退出，在调用销毁所有活动后添加一句杀掉当前进程的代码，如下 ：
+                android.os.Process.killProcess(android.os.Process.myPid());
+            2）示例 ：
+                关闭部分代码 ：
+                    ActivityCollector.finishAll();  //关闭所有活动
+                    android.os.Process.killProcess(android.os.Process.myPid());  //关闭当前程序进程
+        3】启动活动的最佳写法
+            编写一个独立的启动方法(函数)，例如 ：
+                假设需要启动 SecondActivity 活动，需要两个参数，最佳写法如下 ：
+                    1-- 在 SecondActivity 中添加一个actionStart的方法
+                    2-- 在此方法中完成Intent的创建，所有SecondActivity需要的参数都是通过actionStart方法传递过来的，
+                    3-- 将数据存储到Intent中
+                    4-- 最后调用SecondActivity的actionStart方法
+
+三、UI界面编写
+    1、基础控件
+        1】TextView : 文本展示框
+            1）简介 ：用于在屏幕上展示文本信息
+            3）常用属性 ：
+                1-- android:id : 定义唯一标识符
+                2-- android:layout_width : 设置控件宽度
+                3-- android:layout_height : 设置控件高度
+                    （2和3的可选属性 ：match_parent、fill_parent、wrap_content）
+                    match_parent ：与父容器相同（和一样fill_parent）
+                    wrap_content ：当前大小刚好能包裹住内容
+                    也可以指定固定大小（单位dp）
+                4-- android:text : 设置显示文本
+                5-- android:gravity ：设置文字对齐方式（内部），可选值有top\bottom\left\right\center,可用‘|’指定多个值
+                6-- android:textSize ：设置文字大小（单位sp）
+                7-- android:textColor ：设置文字颜色
+        2】Button ：单击按钮
+            1）简介 ：用来与用户交互，可被点击
+            2）常用功能 ：
+                1-- android:textAllCaps ：设置自动字母大小写转换（true为允许，false为拒绝）
+                2-- setOnClickListener() ：点击事件监听器，被单击时调用
+                    语法1 ：使用匿名类方法
+                        start_normal.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                            }
+                        });
+                    语法2 ：使用接口的方式
+                        start_normal.setOnClickListener(this);
+                        @Override
+                        public void onClick(View v) {
+
+                        }
+        3】EditText ：文本编辑框
+            1）简介 ：常用的交互控件，可以输入编辑
+            2）常用方法 ：
+                1-- android:hint ：占位提示符，一段提示文本，用户输入信息后会消失
+                2-- android:maxLines : 设置最大行数，文本框能同时显示的最大行数，超过两行就会向上滚动
+                3-- getText() ：获取编辑框文本内容(需要使用toString()方法转换为字符串)
+        4】ImageView ：图片视图
+            1）简介 ：用于在界面上展示图片
+            2）常用方法 ：
+                1-- android:src : 设置被显示的图片资源（参数语法 ："@路径/名称"）
+                2-- setImageResource(R.路径.名称) ：设置图片资源（java代码）
+        5】ProgressBar ：进度条（默认为旋转进度条）
+            1）简介 ：用于在界面上显示一个进度条
+            2）常用方法：
+                1-- android:visibility ：设置控件是否可见（所有控件都有），可选参数 ：
+                    visible ：控件可见（默认值）
+                    invisible ：控件不可见，任然占有原来的位置
+                    gone ：控件不可见，不占用屏幕
+                2-- setvisibility() : 设置控件是否可见（所有控件都有；java），可选参数 ：
+                    View.VISIBLE ：控件可见（默认值）
+                    View.INVISIBLE ：控件不可见，任然占有原来的位置
+                    View.GONE ：控件不可见，不占用屏幕
+                3-- style : 设置样式
+                    参数可选项1 ：style="?android:attr/progressBarStyleHorizontal" 设置为水平进度条
+                4-- android:max : 设置最大值（水平进度条时使用）
+                5-- android:progress : 设置当前进度
+                6-- setProgress() : 设置当前进度(java)
+        6】AlertDialog ：对话框
+            1）简介 ：弹出对话框，置顶在所有界面元素之上，提示重要信息（模态）
+            2）常用方法：
+                1-- 创建对象 ：AlertDialog.Builder dialog = new AlertDialog.Builder (MainActivity. this);
+                2-- 设置标题 ：dialog.setTitle("This is Dialog");
+                3-- 设置提示信息 ：dialog.setMessage("Something important");
+                4-- 设置是否可被取消（按返回键取消） ：dialog.setCancelable(false); false--不可被取消
+                5-- 添加按钮 ：
+                   1- 设置对话框确定按钮 :
+                        dialog.setPositiveButton("OK", new Dialoginterface.
+                        OnClickListener() {
+                            ©Override
+                            public void onClick(Dialoginterface dialog, int which) {
+                             } })；
+                            第一个参数 ：确定按钮的文本
+                            第二个参数 ：按钮点击事件监听器
+                   2- 设置对话框取消按钮 :
+                       dialog.setNegativeButton("Cancel", new Dialoginterface.
+                       OnClickListener() {
+                           ©Override
+                           public void onClick(Dialoginterface dialog, int which) {
+                            } })；
+                           第一个参数 ：确定按钮的文本
+                           第二个参数 ：按钮点击事件监听器
+               6-- 显示对话框 ：dialog.show();
+        7】ProgressDialog ：进度条对话框
+            1）简介 ：弹出对话框，置顶在所有界面元素之上，显示一个旋转滚动条和提示信息（模态）
+            2）常用方法：
+                1-- 创建对象 ：ProgressDialog progressDialog = new ProgressDialog (MainActivity.this);
+                2-- 设置标题 ：progressDialog.setTitle("This is ProgressDialog");
+                3-- 设置提示信息 ：progressDialog.setMessage("Loading. ..");
+                4-- 设置是否可被取消（按返回键取消）：progressDialog.setCancelable(true);  true :可被取消
+                5-- 显示对话框 ：progressDialog.show();
+                6-- 关闭对话框 ：progressDialog.dismiss();
+
+    2、四种基本布局
+        1】线性布局 ：LinearLayout
+            1）简介 ：此布局中的控件会排列在水平或垂直的方向上(通过参数设置)确定一个排列方向
+            2）常用方法 ：
+                1-- android:orientation : 设置布局方向，可选参数：1 vertical--垂直方向；2 horizontal--水平方向（默认值）
+                    注意 ：LinearLayout 的排列方向设置为 horizontal,就不能将控件宽度指定为match_parent；排列方向设置为 vertical,就不能将控件高度指定为 match_parent
+                2-- android:layout_gravity : 指定控件在布局中的对齐方式
+                    注意 ：当 LinearLayout 的排列方向是 horizontal 时，只有垂直方向上的对齐方式才会生效；当 LinearLayout 的 排列方向是 vertical 时，只有水平方向上的对齐方式才会生效
+                3-- android:layout_width ：设置控件宽度
+                4-- android:layout_weight : 按比例分配宽度（使用此方法是必须将android:layout_width设置为0dp,并且时垂直布局）
+                    注意 ：单位dp---用于指定控件大小、间距等属性的单位
+        2】相对布局 ：RelativeLayout
+            1）简介 ：通过相对定位的方式进行控件布局，对一个控件进行定位时，需要一个参考控件，然后相对这个参考控件来定位
+                    注意 ：相对布局不会强制定位在正方向上，只是相对的，需要对齐方式来调整，例如：
+                      当你将控件A采用相对布局定位到控件B的左边，A不会在B的正左方，而是左上或左下。
+            2）常用方法 ：
+                1-- android:layout_alignParentLeft ：紧贴父容器左边界
+                2-- android:layout_alignParentTop ：紧贴父容器上边界
+                3-- android:layout_alignParentRight ：紧贴父容器右边界
+                4-- android:layout_alignParentBottom ：紧贴父容器下边界
+                5-- android:layout_centerInParent ：处于父容器中心
+                    注意 ：上述几个可以设置多个，实现左上角、右下角等等
+                6-- android:layout_above ：位于指定控件的上方（参数 ：@id/指定控件id ）
+                7-- android:layout_below ：位于指定控件的下方（参数 ：@id/指定控件id ）
+                8-- android:layout_toLeftOf ：位于指定控件的左方（参数 ：@id/指定控件id ）
+                9-- android:layout_toRightOf ：位于指定控件的右方（参数 ：@id/指定控件id ）
+                10-- android:layout_alignLeft : 与指定控件左侧紧贴（参数：@id/指定控件id）
+                11-- android:layout_alignRight : 与指定控件右侧紧贴（参数：@id/指定控件id）
+                12-- android:layout_alignTop : 与指定控件上方紧贴（参数：@id/指定控件id）
+                13-- android:layout_alignBottom : 与指定控件下方紧贴（参数：@id/指定控件id）
+        3】帧布局 ：FrameLayout
+            1）简介 ：所有的控件都会默认摆放在布局的左上角，后放置的控件处于最上层
+            2）常用方法 ：
+                可以在控件内使用android:layout_gravity设置对齐方式
+        4】百分比布局（此布局为新增布局）-- 测试失败，不允与考虑
+            1）简介 ：在此布局中，我们可以直接指定控件在布局中所占的百分比，实现任意比例分割，百分比布局只是在相对布局与帧布局基础上进行了拓展
+                提供了PercentFrameLayout和PercentRelativeLayout这两个全新布局
+            2）使用方式 ：Android 团队将百分比布局定义在了support库当中，我们只需要在项目的build.gradle 中添加百分比布局库的依赖，就能保证
+                    百分比布局在 Android 所有系统版本上的兼容性了。
+
+    3、创建自定义控件
+                                控件的继承树
+                                   View
+                TextView         ImageView          ViewGroup
+          EditText    Button                    LinearLayout  RelativeLayout  。。。
+
+        1】引入布局 ：可以将页面的重复元素单独编写，避免代码重复
+            在XML文件中引入布局（此段为添加标题栏，代码在title布局文件中） ：
+                语法 ：<include layout="@路径/布局文件名" /> ，例 ：
+                    <include layout="@layout/title" />
+            需要将默认的标题栏屏蔽 ：
+                ActionBar actionBar = getSupportActionBar();
+                if (actionBar != null) {
+                    actionBar.hide();
+                }
+        2】创建自定义控件
+          当引入的布局需要事件响应且在不同界面中该控件的功能都想同时，使用自定义控件解决
+            1）创建一个xml的布局文件，为自定义控件布局，此处演示为：title.xml
+            2）编写一个java文件与自定义控件的布局文件绑定 ：
+                public class TitleLayout extends LinearLayout {
+                    public TitleLayout(Context context, AttributeSet attrs) {
+                        super(context, attrs);
+                        LayoutInflater.from(context).inflate(R.layout.title, this);
+                    }
+                }
+                LayoutInflater.from(context).inflate(R.layout.title, this); 对自定义控件进行动态加载
+                    LayoutInflater.from(context) ：构建一个LayoutInflater对象
+                    inflate(R.layout.title, this) ：动态加载布局文件。参数1 ：布局文件；参数2 ：给加载好的布局添加一个父布局
+              java类和布局文件名称最好对应
+            3）在需要添加自定义控件的布局中添加自定义控件
+                与普通控件基本一致，但是需要完整的包名
+                <com.example.activitytest.TitleLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+            4）为自定义控件添加事件:
+                与普通的事件添加基本一致,参考对应代码即可（TitleLayout.java）
+    4、ListView ：列表视图
+       简介 ：列表视图是将一系列展示内容采用一项一行的方式排列（类似微信联系人列表）
+        1】简单用法 ：
+            1）在布局文件中添加控件，设置好ID、大小等属性
+            2）定义数组对象保存内容
+                    private String[] data =new String[]{"Apple", "Banana", "Orange", "Watermelon", "Pear", "Grape", "Pineapple", "Strawberry", "Cherry", "Mango", "Apple", "Banana",
+                                                "0range", "Watermelon","Pear","Grape", "Pineapple", "Strawberry", "Cherry"};
+            3）创建适配器对象并初始化，初始化过程会添加数据
+                    ArrayAdapter<String> adapter = new ArrayAdapter<String>(FirstActivity.this,
+                                    android.R.layout.simple_list_item_1, data);  //创建适配器并初始化
+                    参数1 ：上下文对象
+                    参数2 ：listView子项的ID（内置）
+                    参数3 ：传递数据对象
+            4）获取列表视图对象并绑定适配器
+                    ListView listView = findViewById(R.id.list);
+                    listView.setAdapter(adapter);
+
+        2】定制ListView界面
+          默认的listView只能显示一行文本，比较单调，可以参考以下方式自定义
+         【*】此定制效果为文本旁有一个图标
+            1）定义一个实体类作为ListView适配器的适配类型（此处命名为Fruit） : 代码参考 Fruit.java
+            2）为ListView子项指定我们自定义的布局，新建一个xml文件去编辑自定义布局  ：代码参考 fruit_item.xml
+            3）创建一个自定义适配器，这个适配器继承至ArrayAdapter，将泛型指定为Fruit类，此适配器名称定为 ：FruitAdaper，代码参考 ：FruitAdaper.java
+              关键语句 ：
+                /*此方法用于加载子项，参数依次为
+                 **子项id、父容器、boolen ：false的含义--只让我们在父布局中声明的 layout 属性生效，但不为 这个 View 添加父布局
+                 * ，因为一旦 View 有了父布局之后，它就不能再添加到 ListView 中了，false为标准写法*/
+                 view = LayoutInflater.from(getContext()).inflate(resourceId, parent, false);
+            4）优化ListView的运行效率 ：
+                在上述过程实现后，每次getView方法都会把布局重新加载一遍，它还有一个convertView参数，用于将之前加载好的布局进行缓存，方便重用，修改参考 ：FruitAdaper.java
+                优化1 ：实现了getView不会每一次都重新加载布局
+                优化2 ：实现了当View存在时不必允许findViewById去获取控件
+        3】ListView的点击事件
+            项目点击事件监听器 ：setOnItemClickListener
+                listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    Fruit fruit = fruitList.get(position);  //获取被点击的子项
+                    Toast.makeText(FirstActivity.this, fruit.getName(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+    5、滚动视图 ；RecyclerView
+        1】基本用法 ：
+            1）在build.gradle(:app)文件中添加滚动试图的依赖 ：
+                //noinspection GradleCompatible
+                implementation 'com.android.support:recyclerview-v7:28.0.0'
+            2）在布局文件中添加控件，注意是完整路径，配置ID、大小等尺寸
+            3）配置适配器 ：参考RecyFruitAdaper.java文件
+
+        2】实现横向滚动
+            1）首先是对子项布局进行修改 ：参考app\view_notes\RecyclerView横向滚动 "三、子项布局"
+                将布局设置为垂直布局，宽度设置为100dp防止宽度不一
+                将两个控件设置为在布局中水平居中
+            2）将默认的水平排列设置为水平排列（滚动方向） ：
+                layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);  //设置为水平排列
+        3】瀑布流布局 ：参考app\view_notes\RecyclerView瀑布流布局
+            1）对子类布局进行微调 ：
+            2）创建并初始化布局对象 ：参考app\view_notes\RecyclerView瀑布流布局 "二、子项布局"
+                StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL);  //创建StaggeredGridLayoutManager对象
+                    参数一 ：指定布局的列数，设定后布局会进行平分
+                    参数二 ：用于指定布局的排列方式，StaggeredGridLayoutManager.VERTICAL 表示垂直排列
+            3）设置各个子项的高度不一致 ：
+                    使文本长度不一样，此处为使重复名称
+        4】RecyclerView 的点击事件
+            1）简介 ：RecyclerView 的点击事件需要我们给子项具体的View注册点击事件
+            2）实现流程 ：
+                1-- 修改ViewHolder，在其中加入fruitView变量来保存子项最外层布局实例
+                    View fruitView;  ////子项View全局变量定义，用于设置点击事件
+                2-- 在onCreateViewHolder中注册点击事件，历程注册了最外层布局和ImageView的点击事件
+                    holder.fruitView.setOnClickListener(new View.OnClickListener() {  //设置子项最外层的点击事件
+                        @Override
+                        public void onClick(View v) {
+                            int position = holder.getAdapterPosition();
+                            Fruit fruit = mFruitList.get(position);
+                            Toast.makeText(v.getContext(), "you clicked view" +fruit.getName(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+                    holder.fruitImage.setOnClickListener(new View.OnClickListener() {  //设置子项图片视图的点击事件
+                        @Override
+                        public void onClick(View v) {
+                            int position = holder.getAdapterPosition();
+                            Fruit fruit = mFruitList.get(position);
+                            Toast.makeText(v.getContext(), "you clicked view" +fruit.getName(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                3-- 在点击事件中获取用户点击的 position，然后通过position获取Fruit实例
+                    int position = holder.getAdapterPosition();
+                    Fruit fruit = mFruitList.get(position);
+              【*】RecyclerView可以注册子项任意控件的点击事件
+
+    6、RecyclerView 与 ListView比较
+        ListView的布局排列是由自身去管理的,而 RecyclerView 则将这个工作交给了 LayoutManager, LayoutManager中制定了一套可扩展的布局
+      排列接口，子类只需要按照接口的规范来实现即可，就能实现不同方式的布局
+        RecyclerView的布局方式 ：LinearLayoutManager 、GridLayoutManager 、StaggeredGridLayoutManager
+            GridLayoutManager ：网格布局
+            StaggeredGridLayoutManager ：瀑布流布局
+
+    7、界面编写小技巧
+        1】制作-path图片
+            1）简介 ：
+                9-path图片是一类特殊处理过的图片，能够指定某些区域可以被拉伸，类似QQ消息框的伸缩变化
+            2）制作 ：首先将需要制作的图片导入，然后右键它，选择 “Create p Path file” 然后拖动边线设定可拉伸区域
+        2】编写聊天界面 ：
+            1）聊天框背景采用9-path图片，可以适应拉升，同时，为了美观应该设定最大宽度，还需要设定内边距，使不可拉伸区域不会出现显示内容
+            2）消息显示应该使用 recyclerview 来进行布局
+            3）下方还应该有发送按钮、文本编辑区
+
+四、碎片的学习
+    1、碎片的含义
+        1】碎片（Fragment）是一种可以嵌入在活动当中的 UI 片段，它能让程序更加合理和充分地利 用大屏幕的空间，因而在平板上应用得非常广泛。
+        虽然碎片对你来说应该是个全新的概念，但我 相信你学习起来应该毫不费力，因为它和活动实在是太像了，同样都能包含布局，同样都有自己 的
+        生命周期。你甚至可以将碎片理解成一个迷你型的活动，虽然这个迷你型的活动有可能和普通的活动是一样大的。
+        2】将设备的屏幕分区，然后每一个小分区就是一个碎片，我们需要充分的使用屏幕上的碎片空间
+    2、碎片的使用方式
+        1】使用范围 ：通常是在平板开发中使用（平板为横屏，空间比较大，会有一些留白区域，这些区域就是碎片）
+        2】使用流程 ：在布局文件中添加
+            1）创建碎片的布局文件 ：此处为left_layout.xml 、 right_layout
+            2）创建对应的java类 ，用来加载布局 ：此处为LeftFragment.java 、RightFragment.java
+                重要语句 ：View view = inflater.inflate(R.layout.left_layout, container, false);  //加载布局
+            3）在activity_main.xml（主布局文件中）添加<fragment>标签来添加碎片，不建议使用layout_width属性来设定宽度，建议使用layout_weight来设置宽度占比
+                重要语句 ：android:name="com.example.table.RightFragment" 指明 碎片类名
+    3、动态添加碎片 ：在程序运行过程中动态的添加到活动中
+        1】创建步骤 ：
+            1） 创建待添加碎片的实例 ：
+                replaceFragment(new AnotherRightFragment()); 此方法的参数(new AnotherRightFragment())既为碎片实例
+            2）获取FragmentManager，在活动中通过getSupportFragmentManager()方法获取
+                FragmentManager fragmentManager = getSupportFragmentManager();
+            3）开启一个事务，通过调用beginTransaction()实现
+                FragmentTransaction transaction = fragmentManager.beginTransaction();
+            4）像容器内添加或替换碎片，一般使用replace实现，传入容器的id和碎片实例
+                transaction.replace(R.id.right_layout, fragment);
+            5）提交事务，调用commit()方法实现
+                transaction.commit();
+    4、用碎片模拟返回栈
+        1】简介 ：不使用返回栈时，按下back键会直接退出，使用后，按下back会返回上一个碎片
+        2】使用方法 ：
+            1）FragmentTransaction有一个addToBackStack()方法，用于将事务添加到返回栈中
+            2）添加语句 ：
+                transaction.addToBackStack(null);  //添加事务到返回栈，参数用于描述返回栈状态，一般用null
+    5、碎片与活动之间的通信
+        1】简介 ：碎片和活动都是存在于独立的类中，在碎片与活动进行通信时，FragmentManager提供了findFragmentById(),类似于findViewById()
+        2】使用方法 ：
+            在活动中获取碎片的实例 ：findFragmentById()
+                RightFragment rightFragment = (RightFragment) fragmentManager.findFragmentById(R.id.right_fragment);  //获取碎片中的碎片实例
+            在碎片中获取活动的实例 ：getActivity()
+                MainActivity mainActivity = (MainActivity)getActivity();
+    6、碎片的生命周期
+        1】碎片的状态
+            1）运行状态
+                碎片可见，他所关联的活动正在运行
+            2）暂停状态
+                与碎片关联的活动处于暂停状态（另一个活动处于栈顶）
+            3）停止状态
+                当活动进入停止状态，他关联的碎片就会进入停止状态，或者调用FragmentTransaction的remove()、replace()方法将碎片移除，
+              但是，如果事务提交了 addToBackStack方法，这时碎片也会进入停止状态（进入停止状态的碎片对用户完全不可见可能被销毁）
+            4）销毁状态
+                碎片依赖于活动，活动被销毁，碎片也会被销毁；通过调用FragmentTransaction的remove()、replace()方法将碎片移除，但在事务提交之前没有
+              调用addToBackStack方法。
+        2】碎片的回调方法
+            1）活动有的碎片都有
+            2）碎片特有的回调函数 ：
+                1-- onAttach() ：碎片与活动建立关联时调用
+                2-- onCreateView() ：为碎片创建视图（加载布局）时调用
+                3-- onActivityCreated() ：确保与碎片相关联的活动一定已经创建完毕的时候调用
+                4-- onDestroyView() ：当与碎片关联的视图被移除的时候调用
+                5-- onDetach() ：当碎片和活动接触关联时调用
+
+            3）回调函数允许流程图 ：
+                onAttach -> onCreate -> onViewCreated -> onActivityCreated -> onStart -> onResume -按下Back退出-> onPause -> onStop -> onDestroyView -> onDestroy -> onDetach
+    7、动态加载布局技巧
+        1】使用限定符
+            1）平板通常为双页模式，左侧显示子项列表，右侧为内容；但是手机有时双页有时单页，我们可以通过添加限定符（Qualifirers）来决定加载双页或单页布局
+            2）示例流程 ：
+                1-- 修改layout/activity_main.xml为单页，代码参考 ：layout/activity_main.xml
+                2-- 创建layout-large文件夹，在其中创建activity_main.xml，代码参考 ：layout-large/activity_main.xml
+                2-- large为限定符，将单页文件放置在layout中，双页文件放置在layout-large中，文件命名相同，这样可以方便切换单双页
+            3）创建限定符参考 ：
+              屏幕大小
+                1-- small ：提供给小屏幕设备
+                2-- normal ：提供给中等屏幕设备
+                3-- large ：提供给大屏幕设备
+                4-- xlarge ：提供给超大屏幕设备
+              分辨率 ：
+                1-- ldpi ：提供给低分辨率设备（120dpi以下）
+                2-- mdpi ：提供给中等分辨率设备（120dpi~~160dpi）
+                3-- hdpi ：提供给高分辨率设备（160dpi~~240dpi）
+                4-- xhdpi ：提供给超高分辨率设备（240dpi~~320dpi）
+                5-- xxhdpi ：提供给超超高分辨率设备（320dpi~~480dpi）
+              方向 ;
+                1-- land : 横屏设备
+                2-- port ：竖屏设备
+        2】使用最小宽度限定符
+            1）简介 ：最小宽度限定符允许我们对屏幕宽度指定一个最小值（单位dp），然后以这个最小值为临界点，尺寸大于此值加载一个，小于加载另一个
+            2）简单使用 ：
+                1-- 在res目录下新建layout—sw600dp
+                2-- 然后在文件夹新建activity_main.xml布局
+              这就表示屏幕大于600dp时会加载layout—sw600dp/activity_main.xml，小于会加载layout/activity_main.xml
+
+    8、碎片示例(rable moudle) ：简易的新闻应用(兼任手机和平板)
+        1】创建News类，其中title表示新闻标题，content表示新闻内容
+        2】新建布局文件 ：news_content_frag.xml,作为新闻布局
+            分为两个部分 ：
+                头部部分显示新闻标题，正文部分显示新闻内容，中间用一条细线隔开
+        3】创建NewsContentFragment类用于加载布局
+        4】创建一个新活动，踟蹰命名为NewsContentActivity，关联布局文件为news_content.xml，加载新闻内容
+        5】创建显示新闻列表的布局，此处命名为 news_title_frag.xml
+        6】创建子项布局，此处命名为 ：news_item.xml
+            android:padding : 添加外边距
+            android:singleLine="true" ：表示只能显示单行文本（以淘汰，可选择android:maxLines=""设置最大行数）
+            android:ellipsize="end" ：设定文本超过空间宽度时的文本缩略方式，此为尾部缩略
+        7】新建 NewsTitleFragment 作为展示新闻列表的控件，利用是否存在news_content_layout布局来选择单页还是双页
+        8】在NewsTitleFragment新建一个内部类作为适配器，此处命名为NewsAdapter(此处为内部类，好处是可以直接访问内部变量)
+        9】在NewsTitleFragment中添加RecyclerView（滚动视图）
+
+五、广播学习
+    1、广播简介
+        1】分类
+            1）标准广播 ：完全异步执行，发出后，所有接收器几乎同时接收到这条广播消息，没有先后顺序，无法被截断。
+            2）有序广播 ：同步执行，发出后同一时刻只有一个接收器能接收到消息，当这个接收器中逻辑执行完之后，广播继续传递。在这个方式中，广播接收是有先后
+                    顺序的，优先级高的接收器会优先接收广播消息，接收器还可以截断广播信息（后续接收器无法接收广播信息）
+    2、接收系统广播
+      android会内置很多系统级别的广播，我们在应用程序中监听这些广播来得到各种系统的状态信息
+        1】动态注册监听网络变化
+            1）广播接收器可以自定义注册(针对性注册),监听接收对于注册过的广播
+            2）注册方式 ：
+                1-- 在代码中注册 ：动态注册（可动态更改）
+                2-- 在 AndroidManifest.xml 中注册 ：静态注册（程序运行状态不可更改）
+            3）创建广播接收器 ：
+                1-- 新建一个class，继承至 BroadcastReceiver
+                2-- 重写父类onReceive()方法，每当有广播到来就会执行onReceive()方法
+        2】使用广播来接收网络状态发生改变（动态注册）
+            1）创建一个内部类继承至BroadcastReceiver，命名为 ：NetworkChangeReceiver
+                private class NetworkChangeReceiver extends BroadcastReceiver
+            2）为这个类重写 onReceive()方法，每当接收到注册的广播就会调用此方法
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    Toast.makeText(context, "network changes", Toast.LENGTH_SHORT).show();
+                }
+            3）创建 IntentFilter 对象并添加action，当你注册一个广播时需要一个action，它代表你注册广播的头，用于过滤
+                private IntentFilter intentFilter;  //全局变量
+                intentFilter = new IntentFilter();
+                intentFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");  //添加action（此处为网络状态发生改变）
+            4）创建 NetworkChangeReceiver 实例
+                private NetworkChangeReceiver networkChangeReceiver;
+                networkChangeReceiver = new NetworkChangeReceiver();
+            5）调用 registerReceiver() 方法进行注册，传入接收器实例和IntentFilter实例
+                registerReceiver(networkChangeReceiver, intentFilter);  //注册广播
+            5）注意点 ：动态注册的广播一定要取消注册
+                unregisterReceiver(networkChangeReceiver);  //取消广播注册
+          此部分只会提示网咯状态变化，但不会提示具体状态
+        3】优化代码，获取网络状态
+            1）优化代码如下（只对内部NetworkChangeReceiver类的onReceive()方法进行更改） ：
+                @Override
+                        public void onReceive(Context context, Intent intent) {
+                            //获取 ConnectivityManager 实例（系统服务类，专门管理网络连接）
+                            ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                            //获取NetworkInfo实例
+                            NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+                            if (networkInfo != null && networkInfo.isAvailable()) {  //判断是否有网络
+                                Toast.makeText(context, "net is available", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(context, "net is unavailable", Toast.LENGTH_SHORT).show();
+                            }
+
+                //            Toast.makeText(context, "network changes", Toast.LENGTH_SHORT).show();
+                        }
+            2）解读 ：
+                1-- 获取 ConnectivityManager 实例（系统服务类，专门管理网络连接）
+                    ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                2-- 获取NetworkInfo实例，调用networkInfo.isAvailable()来判断是否有网络连接
+                    NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();  //获取实例
+                    if (networkInfo != null && networkInfo.isAvailable()) {  //判断是否有网络
+                        Toast.makeText(context, "net is available", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(context, "net is unavailable", Toast.LENGTH_SHORT).show();
+                    }
+            3）注意点 ：Android有保护用户设备安全和隐私的机制，规定 ：
+                如果程序需要进行对用户来说比较敏感的操作，就必须配置文件中申明的权限，否则程序将崩溃。
+               在上一个案例中我们访问系统的网络状态需要申明权限，下面是在AndroidManifest.xm中添加网络访问权限的代码 ：
+                    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /> (添加在<application>标签外，<manifest>标签内)
+            4）动态注册优缺点
+                动态注册的广播接收器可以自由控制注册于注销，但是它必须在程序启动之后才能接收到广播
+        4】静态注册实现开机自启
+            1）使用android studio提供的快捷方式来创建广播接收器
+                1-- 右键 com.example.broadcast -> New ->Other ->Broadcast Receiver
+                2-- 此处命名为 BootCompleteReceiver,创建时的两个属性 ：
+                    Exported ：是否允许这个1广播接收器接收本程序以外的广播（建议勾选，具体看需求）
+                    Enabled ：是否启动这个广播接收器（建议勾选，具体看需求）
+                3-- 创建静态广播接收器需要在 AndroidManifest.xml 中注册，注册代码如下（快捷方式创建会自动生成） ：
+                    <receiver
+                        android:name=".BootCompleteReceiver"
+                        android:enabled="true"
+                        android:exported="true">
+                    </receiver>
+                4-- 在 AndroidManifest.xml 中添加涉及的权限（示例为开机自启权限）：
+                    <intent-filter>
+                        <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                    </intent-filter>  （添加到<receiver>标签中）
+        5】注意点 ：onReceive()方法中需要添加过多的逻辑和耗时操作，因为广播接收器不允许开启线程，如果在此停留时间较长会报错
+            广播接收器常扮演一个打开程序其他组件的角色
+    2、发送自定义广播
+        1】发送标准广播
+            1)创建一个广播接收器来接收自定义广播 ：命名为 MyBroadcastReceiver
+                修改对应的 AndroidManifest.xml 注册文件，这里设定的是发出的值
+                <intent-filter>
+                    <action android:name="com.example.broadcasttest.MY_BROADCAST" />
+                </intent-filter>
+            2）修改 activity_main.xml : 添加一个按钮，用来发送广播
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent("com.example.broadcasttest.MY_BROADCAST");
+                    sendBroadcast(intent);  //发送广播
+                }
+                代码解析 ：
+                    构建一个Intent对象，将要发送的广播的中保存在Intent中，然后调用Context的sendBroadcast()方法发送广播
+        2】发有序广播
+            1）自定义广播接收器用于接收自定义广播 ：命名为 AnotherBroadcastReceiver
+            2）修改对应的注册文件 ：
+                <intent-filter>
+                    <action android:name="com.example.broadcasttest.MY_BROADCAST" />
+                </intent-filter>
+            3）修改广播发送代码 ：sendOrderedBroadcast(intent, null);  //发送广播
+                第一个参数 ：绑定发送值的Intent对象
+                第二个参数 ：与权限有关的字符串，本实验用null
+            4）设置广播接收器的优先级(在注册文件中设定)
+                <intent-filter android:priority="100">
+                    <action android:name="com.example.broadcasttest.MY_BROADCAST"/>
+                </intent-filter>
+                设置优先级为 100 ：android:priority="100"
+            5）设置广播截断(在onReceive()方法中设置)
+                abortBroadcast();  //这条广播被截断
+    3、使用本地广播
+        1】简介 ：本地广播只能在应用程序内部传递，并且广播接收器只能接收本程序发出的广播
+        2】用法 ：主要是使用 LocalBroadcastManager
+          两个全局变量 ：
+                private LocalReceiver localReceiver;
+                private LocalBroadcastManager localBroadcastManager;
+            1）获取实例 ：localBroadcastManager = LocalBroadcastManager.getInstance(this);  //获取实例
+            2）注册广播接收器 ；
+                intentFilter = new IntentFilter();
+                intentFilter.addAction("com.example.broadcast.LOCAL_BROADCAST");  //添加action
+                localReceiver = new LocalReceiver();
+                localBroadcastManager.registerReceiver(localReceiver, intentFilter);  //注册本地广播监听器
+            3）发送广播 ：
+                Intent intent = new Intent("com.example.broadcast.LOCAL_BROADCAST");
+                localBroadcastManager.sendBroadcast(intent);  //发送本地广播
+            4）取消注册 ：
+                localBroadcastManager.unregisterReceiver(localReceiver);  //取消注册
+
+        3】注意点 ：本地广播不能进行静态注册
+        4】本地广播的优势 ：
+            1）可以明确地知道正在发送的广播不会离开我们的程序，因此不必担心机密数据泄漏。
+            2）其他的程序无法将广播发送到我们程序的内部，因此不需要担心会有安全漏洞的隐患。
+            3）发送本地广播比发送系统全局广播将会更加高效。
+
+    4、广播实践--实现强制下线功能
+        1】实现关闭应用程序所有活动（可参考app/java/com.example.activity/ActivityCollector.java）
+            直接复制过来即可
+        2】创建一个所有活动的父类（可参考app/java/com.example.activity/BaseActivity.java）
+            直接复制过来即可
+        3】创建登录界面活动（自动生成对应布局文件），活动命名为：LoginActivity
+            1）首先为布局文件（activity_login.xml）添加控件（账号密码输入框和登录按钮）
+            2）修改LoginActivity.java文件，代码部分参考文件
+        4】在 BaseActivity.java 中添加广播接收器类，这是所有类的基类，所以所有界面接收到广播都会运行相关逻辑
+            private class ForceOfflineRexeiver extends BroadcastReceiver {
+            @Override
+            public void onReceive(final Context context, Intent intent) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(context);  //创建对话框对象
+                builder.setTitle("Warning");  //设置标题
+                builder.setMessage("You are forced to be offline. Please try to login again.");  //设置显示内容
+                builder.setCancelable(false);  //设置是否可被取消
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {  //设置确定按钮并添加点击事件
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        ActivityCollector.finishAll();  //销毁所有活动
+                        Intent intent = new Intent(context, LoginActivity.class);
+                        context.startActivity(intent);  //从新打开登陆界面
+                    }
+                });
+                builder.show();  //显示对话框
+            }
+        }
+        5】在 BaseActivity.java 中重写 onResume() 和 OnPause() 方法
+            1）onResume() 中注册广播接收器
+                @Override
+                protected void onResume() {
+                    super.onResume();
+                    IntentFilter intentFilter = new IntentFilter();
+                    intentFilter.addAction("com.example.broadcastbest.FORCE_OFFLINE");
+                    receiver = new ForceOfflineRexeiver();
+                    registerReceiver(receiver, intentFilter);  //注册广播接收器
+                }
+            2）在 OnPause() 中取消注册广播接收器
+                @Override
+                protected void onPause() {
+                    super.onPause();
+                    if (receiver != null) {
+                        unregisterReceiver(receiver);  //取消广播接收器注册
+                        receiver = null;
+                    }
+                }
+        6】将主活动设置为 LoginActivity
+            <activity android:name=".LoginActivity">
+                <intent-filter>
+                    <action android:name="android.intent.action.MAIN" />
+
+                    <category android:name="android.intent.category.LAUNCHER" />
+                </intent-filter>
+    5、关于Git
+        1】配置身份（用户名和邮箱）
+            git config --global user.name "名称"
+            git config --global user.email "邮箱"
+        2】创建代码创库
+            1）初始化（创建）
+                git init
+            2) 添加文件
+                1-- 添加单个文件 ：git add 名称.后缀名
+                2-- 添加一个文件夹下的所有文件 ：git add 文件夹名
+                3-- 一次性添加所有文件 ：git add .
+            3）添加完之后需要提交文件
+                git commit -m "提示性信息"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

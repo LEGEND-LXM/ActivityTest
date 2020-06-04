@@ -1,0 +1,27 @@
+一、main java
+        与基础使用基本相同，加入 ：layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);  //设置为水平排列
+    使滚动方向变为水平
+二、适配器
+    不变
+三、子项布局
+    <?xml version="1.0" encoding="utf-8"?>
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/fruit_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"/>
+
+        <TextView
+            android:id="@+id/fruit_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginLeft="10dp"/>
+
+    </LinearLayout>
