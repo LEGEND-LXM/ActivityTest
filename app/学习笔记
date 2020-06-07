@@ -902,9 +902,76 @@ Android学习笔记
                 2-- 第二个参数 ：文件的操作模式，主要有以下两种 ：
                     1- MODE_PRIVATE ：默认操作模式，表示如果文件存在则会覆盖原文件内容
                     2- MODE_APPEND ：如果文件存在就追加内容，不创建新文件
-                
+            2）案例 ：实现文件存储
+              文件操作部分代码解读 ：
+                //对FileOutputStream对象和BufferedWriter对象进行清空
+                FileOutputStream out = null;
+                BufferedWriter writer = null;
+                try {
+                        //对FileOutputStream对象和BufferedWriter对象进行初始化
+                        out = openFileOutput("data", Context.MODE_PRIVATE);
+                        writer = new BufferedWriter(new OutputStreamWriter(out));
+                        //写入数据
+                        writer.write(input);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }finally {
+                        try {
+                            //清空writer
+                            if (writer != null) {
+                                writer.close();
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                对FileOutputStream对象和BufferedWriter对象进行清空
+        3】从文件中读取数据
+            1）Context类中的openFileInput()方法 ：用于从文件中读取文件，只接受一个参数——文件名
+                系统会自动到/data/data/<package name>/files/目录下去加载文件，返回一个FileInputStream对象
+            2）案例 ：加载文件内容
+                String text = loadFile();  //接收读取的数据
+                  if (!TextUtils.isEmpty(text)) {  //判断非空
+                      editText.setText(text);  //设置文本
+                      editText.setSelection(text.length());  //移动光标
+                      }
 
-
+                public String loadFile() {
+                //创建局部FileInputStream对象和BufferedReader对象并清零
+                FileInputStream in = null;
+                BufferedReader reader = null;
+                //新建字符串对象
+                StringBuilder content = new StringBuilder();
+                try {
+                    //打开文件
+                    in = openFileInput("data");
+                    //初始化BufferedReader对象
+                    reader = new BufferedReader(new InputStreamReader(in));
+                    String line = "";
+                    //逐行读取并连接
+                    while ((line = reader.readLine()) != null) {
+                        content.append(line);
+                    }
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    //关闭io流
+                    try {
+                        reader.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                //返回读取值
+                return content.toString();
+            }
+            3）API ：
+                setSelection(int a) : 将光标移动到第a个字符后面
+                TextUtils.isEmpty(String text) ：对字符串进行非空判断（为null或“”时返回true）
 
 
 
