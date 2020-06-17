@@ -973,12 +973,55 @@ Android学习笔记
                 setSelection(int a) : 将光标移动到第a个字符后面
                 TextUtils.isEmpty(String text) ：对字符串进行非空判断（为null或“”时返回true）
 
+    3、SharedPreferences 存储
+        1】简介 ：使用键值对的方式存储数据，读取数据时通过键来读取数据
+        2】使用SharedPreferences存储和读取数据
+            1）首先要获取 SharedPreferences 对象，获取对象的三种方法：
+                1--  Context类中的 getSharedPreferences()方法
+                    参数1 ：用于指定 SharedPreferences 文件的名称，如果指定的文件不存在则会创建一个，SharedPreferences 文件存放在/data/data/<package name>/shared_prefs/中
+                    参数2 ：指定操作模式，可选值只有 MODE_PRIVATE，表示只有当前应用程序能对此 SharedPreferences 文件进行读写
+                2-- Activity类中的getPreferences()方法
+                    参数 ：唯一参数，指定操作模式（使用此方法时会自动将当前活动的类名作为SharedPreferences的文件名）
+                3-- PreferenceManager类中的getDefaultSharedPreferences()方法---静态方法
+                    参数 ：唯一参数，Context参数，自动使用当前应用程序的包名作为前缀来命名SharedPreferences文件
+            2）对 SharedPreferences 文件进行数据存储操作
+                1-- 调用 SharedPreferences 对象的 edit ()方法来获取一个 SharedPreferences.Editor 对象
+                2-- 向 SharedPreferences.Editor 对象中添加数据，比如添加一个布尔型数据就使用 putBoolean()
+                   方法，添加一个字符串则使用 putString()方法，以此类推
+                3-- 调用 apply ()方法将添加的数据提交，从而完成数据存储操作
+                4-- 保存数据基本流程（示例）
+                    //获取 SharedPreferences.Editor 对象
+                    SharedPreferences.Editor editor = getSharedPreferences("data", MODE_PRIVATE).edit();
+                    //保存数据
+                    editor.putString("name", "tom");
+                    editor.putInt("age", 19);
+                    editor.putBoolean("married", false);
+                    //提交保存
+                    editor.apply();
+            3）对 SharedPreferences 文件进行数据读取操作
+                1-- 获取 SharedPreferences 对象，与数据存储相同
+                2-- 使用 SharedPreferences 对象对应的get方法来获取数据，例如getBoolean()就是获取Boolean类型数据
+                   此处的get方法与存储中的put方法一一对应
+                    参数1 ：数据对应的键
+                    参数2 ：默认值，当键不存在时的返回值
+                3-- 示例 ：
+                    //获取 SharedPreferences 对象
+                    SharedPreferences preferences = getSharedPreferences("data", MODE_PRIVATE);
+                    //读取数据（如果找不到键对应的值则会返回第二个参数）
+                    String name = preferences.getString("name", "");
+                    int age = preferences.getInt("age", -1);
+                    Boolean married = preferences.getBoolean("married", false);
+                    //打印日志
+                    Log.d("MainActivity", "name:"+name);
+                    Log.d("MainActivity", "age:"+age);
+                    Log.d("MainActivity", "married:"+married);
 
+         3】实现记住密码功能
+            保存 ：勾选复选框后将数据保存
+            设置 ：在活动布局加载时调用读取数据代码，然后设置为密码
 
-
-
-
-
+    3、SQLite数据库存储
+        1】简介 ：轻量级关系型数据库，占用资源少，通常只需要几百KB，支持标准SQL语法，遵循数据库的ACID事物；适用于保存大量复杂的关系型数据
 
 
 
