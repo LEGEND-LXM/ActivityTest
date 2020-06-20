@@ -1022,36 +1022,145 @@ Android学习笔记
 
     3、SQLite数据库存储
         1】简介 ：轻量级关系型数据库，占用资源少，通常只需要几百KB，支持标准SQL语法，遵循数据库的ACID事物；适用于保存大量复杂的关系型数据
+        2】创建数据库 ：借助 SQLiteOpenHelper 帮助类对数据库进行创建和升级
+            1）简介 ：SQLiteOpenHelper类是一个抽象类，需要被继承才能使用，需要重写的抽象方法onCreate()、onUpgrade(),创建和打开数据库的实例方法 ：
+                1-- getReadableDatabase() : 创建或打开现有数据库（不存在则创建），返回一个可对数据库进行读写的对象，当数据库不可写入时，以只读的方式打开
+                2-- getWritableDatabase() : 创建或打开现有数据库（不存在则创建），返回一个可对数据库进行读写的对象，出现异常
+            2）构造方法 ：共有两个，使用参数较少的即可（4个）
+                参数1 ：Context上下文对象
+                参数2 ：数据库名
+                参数3 ：允许我们在查询数据时返回一个自定义的Cursor（一般情况下使用null）
+                参数4 ：当前数据库的版本号，用于对数据库进行升级
+            3）数据库保存地址 ：/data/data/<package name>/database/
+            4）onCreate方法通常去处理一些创建表的逻辑
+            5）创建数据库示例演示 ：
+                1-- 数据库创建语法 ：定义为字符串常量
+                    //创建数据库语法id(主键)、作者、价格、页数、书名
+                    //primary key ：主键
+                    //autoincrement ：自增长
+                    public static final String CREATE_BOOK = "create table Book (" +
+                            "id integer primary key autoincrement, " +
+                            "author text, " +
+                            "price real, " +
+                            "pages integer, " +
+                            "name text)";
+                2-- 执行数据库创建语法 ：execSQL()方法
+                    public void onCreate(SQLiteDatabase db) {
+                        db.execSQL(CREATE_BOOK);
+                        Toast.makeText(mContext, "create succeed", Toast.LENGTH_SHORT).show();
+                    }
+                3-- 利用构造方法对 SQLiteOpenHelper 实例进行初始化
+                    private DatabaseHelper dbHelper;
+                    //SQLiteOpenHelper 实例进行初始化
+                    dbHelper = new DatabaseHelper(this, "BookStore.db", null, 1);
+                    此处 ：
+                         数据库名称 ：BookStore.db
+                         版本号 ：1
+                4-- 创建数据库 ：
+                    dbHelper.getWritableDatabase();
+                    真正的创建语句在 SQLiteOpenHelper 子类的 onCreate方法中
 
+                5-- 查看数据库的表 ：
+                    使用adb shell来查看，adb是Android Studio自带的工具，存放在sdk的platform-tools目录下，配置环境变量 ：
+                        windows ：右键计算机->属性->高级系统设置->环境变量->系统变量->Path
+                                然后将platform-tools目录编辑进去
+                    详细步骤查看《第一行代码 第2版》 P215
+        3】升级数据库
+            1）重写的 onUpgrade() 方法用于更新数据库，例如：添加表
+            2）小知识点 ：当数据库已经存在时，将不会在进入onCreate() 方法,因此不能在创建完数据库后在onCreate() 方法中添加表
+            3）更新数据库示例 ：添加一张表
+                @Override
+                public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+                    //如果表 Book 和 表 Category 已存在则删除这两张表，然后调用onCreate()方法
+                    db.execSQL("drop table if exists Book");
+                    db.execSQL("drop table if exists Category");
+                    onCreate(db);
+                }
+                注意 ：
+                    想要运行 onUpgrade 方法需要在调用初始化语句：dbHelper = new DatabaseHelper(this, "BookStore.db", null, 1);时最后一个参数
+                  版本号大于最后一次的版本号，这样会先调用 onUpgrade 方法删除相关数据表，然后调用onCreate 方法重新创建
 
+        4】添加数据
+            1）简介 ：创建数据库时会返回一个 SQLiteDatabase对象 用来对数据库进行数据的添加、更新、查询、删除
+            2）方法 ：SQLiteDatabase对象的 insert() 方法用于向数据表添加数据
+                参数1 ：数据表的名称
+                参数2 ：用于在未指定添加数据的情况下给某些可为空的列自动赋值NULL(一般使用null)
+                参数3 ：ContentValues 对象，他提供了一系列的put方法重载，用于向ContentValues中添加数据，将表中的列名以及相应的待添加数据传入即可
+            3）插入一条数据如下 ：
+                //获取SQLiteDatabase对象
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                //创建ContentValues对象来保存数据
+                ContentValues values = new ContentValues();
+                //开始组装第一条数据
+                values.put("name", "The Da Vinci Code");
+                values.put("author", "Dan Brown");
+                values.put("pages", 454);
+                values.put("price", 16.96);
+                //插入第一条数据
+                db.insert("Book", null, values);
+              注意 ：ContentValues 对象有一个clear() 方法，用来清空数据，在添加多条数据时可使用
+        5】更新数据
+            1）方法 ：SQLiteDatabase对象的 updata() 方法用于向数据表更新数据
+                参数1 ：数据表名
+                参数2 ：ContentValues对象，将要更新的数据装进去
+                参数3 ：约束某一行或某几行中的数据，不指定默认更新所有行
+                参数4 ：约束某一行或某几行中的数据，不指定默认更新所有行
+            2）示例 ：
+                //获取SQLiteDatabase对象
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                //创建ContentValues对象来保存需要更新的数据
+                ContentValues values = new ContentValues();
+                values.put("price", 10.00);
+                db.update("Book", values, "name=?", new String[] {"The Da Vinci Code"});
+              参数3 ：相当于SQL语句中的where部分，"name=?" 中的 "?" 为一个占位符，由参数4补齐
+        6】删除数据
+            1）方法 ：SQLiteDatabase对象的 delete() 方法用于删除数据表中的数据
+                参数1 ：数据表名
+                参数2 ：用来约束删除某一行或某几行的数据，不指定默认为删除所有行
+                参数3 ：用来约束删除某一行或某几行的数据，不指定默认为删除所有行
+            2）示例 ：
+                //获取SQLiteDatabase对象
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                db.delete("Book", "id=?", new String[] {"2"});
+        7】查询数据
+            1）方法 ：SQLiteDatabase对象的 query() 方法用于查询数据表中的数据
+              此方法很复杂，最简单的一种用法如下 ：
+                参数1 ：数据表名
+                参数2 ：指定查询那几列
+                参数3 和 参数4 ：用于约束查询哪几行，不指定则默认查询所有行
+                参数5 ：指定是否需要进行group by（分组）操作
+                参数6 ：对group by 之后的结果进行进一步约束
+                参数7 ：指定查询结果的排列方式
+              此方法会返回一个Cursor对象，数据从这个对象中提取出来
+            2）示例 ：
+                //获取SQLiteDatabase对象
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                // 查询Book表中的所有数据（null表示采用默认）
+                Cursor cursor = db.query("Book", null, null, null, null, null, null);
+                if(cursor.moveToFirst()) {
+                    do {
+                        //遍历Cursor对象，取出数据并打印
+                        String name = cursor.getString(cursor.getColumnIndex("name"));
+                        String author = cursor.getString(cursor.getColumnIndex("author"));
+                        int pages = cursor.getInt(cursor.getColumnIndex("pages"));
+                        double price = cursor.getDouble(cursor.getColumnIndex("price"));
+                        String str = "name ：" + name + "\n" + "name ：" + name + "\n" + "author ：" + author + "\n" + "pages ：" + pages + "\n" + "price ：" + price ;
+                        Log.d("MainActivity", str);
 
+                    }while(cursor.moveToNext());
+                }
+                cursor.close();
 
+                    1-- cursor.moveToFirst() ：将指针移到第一行
+                    2-- cursor.getColumnIndex() ：获取某一列对应位置的索引
+                    3-- cursor.getDouble() : 获取对应索引的浮点型数据（其他类型类似）
+                    4-- 注意 ：最好需要调用"cursor.close();"关闭对象
+        8】使用SQL原生语言操作数据库
+            Android studio 支持使用原生SQL语言操作数据库
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            添加数据、更新数据、删除数据 使用 db.execSQL("原生SQL语言", 占位符的解释) 的方式操作
+            查询数据使用 db.rawQuery("原生SQL语言", 占位符的解释) 的方式操作
+    4、使用LitePal操作数据库
 
 
 
