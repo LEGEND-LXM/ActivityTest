@@ -1307,11 +1307,38 @@ Android学习笔记
             参数1 ：位SQL语言
             后续参数 ：占位符内容
 七、跨程序共享数据--内容提供器
+    1、内容提供器简介
+        1）内容提供器用于在不同应用程序间实现数据共享，它允许一个程序访问另一个程序的数据，同时还能保证被访问数据的安全性。
+        2）内容提供器可以选择只对部分数据进行共享，保证隐私不会泄露
 
-
-
-
-
+    2、运行时权限
+        1】Android 权限机制详解
+            1）作用 ：
+                1-- 设置相关权限后可以再安装时显示给用户看，让软件无法滥用权限
+                2-- 可以在应用管理界面随时查看软件涉及的权限
+            2）弊端 ：
+                当对应用程序产生依赖性时，就有可能被软件绑架，给予软件一些与隐私相关的权限
+        2】运行时权限
+            1）简介 ：6.0系统中加入了运行时权限功能，用户不需要在安装软件时一次性授予所有申请的权限，而是在使用的过程中对相关权限的申请进行授予。
+                    这保证了用户拒绝不必要权限后还能继续使用其他功能
+            2）权限分类 ：为了解决一直授权带来的麻烦
+                1-- 普通权限 ：不会直接威胁到用户安全和隐私的权限，这些系统会自动的帮我们去授权，不需要用户再去手动授权
+                        普通权限的使用只需要在 AndroidManifest.xml 中添加即可
+                2-- 危险权限 ：可能会触及到用户隐私或者对设备安全性造成影响的权限（例如：获取通讯录、短信、地理位置），这部分的权限需要用户手动授权
+                        所有的危险权限 ：
+                             权限组名    ：                  权限名
+                            CALENDAR    ：    READ_CALENDAR   、   WRITE_CALENDAR
+                            CAMERA      ：    CAMERA
+                            CONTACTS    ：    READ_CONTACTS   、  WRITE_CONTACTS   、  GET_CONTACTS
+                            LOCATION    ：    ACCESS_FIND_LOCATION   、   ACCESS_COARSE_LOCATION
+                            MICROPHONE  ：    RECORD
+                            PHONE       ：    READ_PHONE_STATE   、   CALL_PHONE   、  READ_CALL_LOG   、   WRITE_CALL_LOG   、
+                                              ADD_VOICEMAIL   、   USE_SIP   、   PROCESS_OUTGOING_CALLS
+                            SENSORS     :     BOOY_SENSORS
+                            SMS         ：    SEND_SMS   、   RECEIVE_SMS    、   READ_SME   、    RECEIVE_WAP_PUSH   、
+                                              RECEIVE_MMS
+                            STORAGE     ：    READ_EXTERNAL_STORAGE   、  WRITE_EXTERNAL_STORAGE
+                    注意 ：我们进行权限处理时是用的权限名，授权后该权限对应的权限组中的所有权限都会被授权
 
 
 
