@@ -1160,7 +1160,181 @@ Android学习笔记
 
             添加数据、更新数据、删除数据 使用 db.execSQL("原生SQL语言", 占位符的解释) 的方式操作
             查询数据使用 db.rawQuery("原生SQL语言", 占位符的解释) 的方式操作
-    4、使用LitePal操作数据库
+    4、使用 LitePal 操作数据库
+        1】简介 ：LitePal 是一个开源的Android数据库框架，采用了对象关系映射（ORM）的模式，对数据库功能进行了封装，不用使用SQL语句就可以完成各种操作。
+        2】配置 LitePal
+            1）添加 LitePal 开源库 ：开源项目会将版本号提交到jcenter上，在build.gradle中声明即可
+            2）添加声明 ：implementation 'org.litepal.guolindev:core:3.1.1' (可去qithub相关项目站查看添加语句)
+            3）配置 litepal.xml文件 ：
+                1-- 在 模块（或app）/src/main 目录下创建一个名为 assets的Directory，在这个目录下新建一个 litepal.xml文件
+                2-- 具体类容可去qithub相关项目站查看添加语句（也可参考此工程中的LitePal moudle）
+                3-- 相关解释说明
+                    <dbname value="demo" /> ：指定数据库名（配置时需更改）
+                    <version value="1" /> ：指定数据库版本
+                    <list> ：用来指定所有的映射模型
+            4）修改 AndroidManifest.xml 文件 ：
+                <manifest>
+                    <application
+                        android:name="org.litepal.LitePalApplication" （添加此句）
+                        ...
+                    >
+                        ...
+                    </application>
+                </manifest>
+            5）对象关系映射
+                面向对象的语言与面向关系的数据库之间的映射，用面向对象的思维来操作数据库，不需要使用SQL语言
+
+        3】创建和升级数据库
+            1）创建数据库并添加一张表 ：
+                1-- 创建一个java类，名称为表名称
+                2-- 在这个类中创建对应的字段，并创建对应的get、set方法（参考 Book.java）
+                3-- 将Book类添加到映射模型列表中（修改litepal.xml中的语句）
+                    <list>
+                        <mapping class="com.example.litepal.Book" />
+                    </list>
+                4-- 现在任意一次数据库操作就可以自动创建出BookStore数据库
+                5-- 此处可使用最简单的数据库操作语句来创建数据库 ：Connector.getDatabase();
+            2）升级数据库
+                直接更改数据表中的内容然后版本号 +1 即可
+        4】使用 LitePal 添加数据
+            1） 创建出 数据表类的实例
+                Book book = new Book();
+            2） 设置需要存储的数据
+                book.setName("The Da Vinci Code");
+                book.setAuthor("Dan Brown");
+                book.setPages(454);
+                book.setPrice(16.95);
+                book.setPress("Unknown");
+            3） 最后调用save()方法
+                book.save();
+            4） 注意 ：LitePal 进行表管理的时候不需要继承结构，但是在进行CRUD操作时需要继承 LitePalSupport
+        5】使用 LitePal 更新数据
+            1）较为简单的一种方式 ：对已存储对象重新设值，然后重新调用sava()方法保存
+                1-- 判断是否为已存储对象方法 ：model.isSaved() ,返回true表示已存储，返回false表示未存储
+                2-- 返回true的情况 ：
+                    1- 已经调用过 model.save() 方法
+                    2- model对象是通过LitePal提供的查API查询出来的
+            2）此时先利用 第一种 返回 true 的方法来试验，代码如下 ：
+                Book book = new Book();
+                book.setName("The Da Vinci Code");
+                book.setAuthor("Dan Brown");
+                book.setPages(454);
+                book.setPrice(16.95);
+                book.setPress("Unknown");
+                book.save();
+                book.setPrice(10.21);
+                book.save();
+            2）利用 第二种 返回 true 的方法来试验
+                1-- 新建一个Book实例
+                    Book book = new Book();
+                2-- 更改对应字段数据
+                    book.setPrice(14.26);
+                    book.setPress("Anchor");
+                3-- 调用updata相关方法来进行更新操作
+                    1- update() : 参数为对应行的 id
+                        book.update(1);
+                    2- updateAll() ：参数为限定条件
+                        book.updateAll("name = ? and author=?", "The Da Vinci Code", "Dan Brown");
+                    3- 注意 ：用这种方法无法更新数据为默认值（例如：int类型数据默认值为0，"book.setPages(0);"是不被允许的，因为新建对象的其他值为默认值）
+                        更新为默认值的方法 ：
+                            Book book = new Book();
+                            bookb.setToDefault("pages");  //更新为默认值的方法
+                            book.updateAll();
+        6】使用 LitePal 删除数据
+            1）（第一种方法）调用已存储对象的 delete() 方法
+            2）调用LitePal的相关delete方法 ：
+                1-- LitePal.deleteAll() ：删除数据表中的匹配行数据
+                    参数1 ：数据表的类名（例如：Book.class）
+                    后续的参数 ：约束条件
+                    例 ：LitePal.deleteAll(Book.class, "id = ?", "3");
+                2-- LitePal.delete() ：删除数据表中的某一行数据
+                    参数1 ：数据表的类名（例如：Book.class）
+                    参数2 ：数据行的 id
+                    例 ：LitePal.delete(Book.class, 4);
+                3-- LitePal.deleteDatabase() ：删除数据库
+                    参数 ：数据库名称
+        7】使用 LitePal 查询数据
+            1）查询数据表中的所有数据 ：
+                语法 ：List<数据表类名(不带.java)> 列表名称 = LitePal.findAll(数据表类名(带.java));
+                例 ：List<Book> books = LitePal.findAll(Book.class);
+                实例 ：查询数据表并遍历打印
+                    List<Book> books = LitePal.findAll(Book.class);
+                    for (Book book : books) {  //遍历列表
+                        Log.d("MainActivity", "id : " + book.getId());
+                        Log.d("MainActivity", "name : " + book.getName());
+                        Log.d("MainActivity", "author : " + book.getAuthor());
+                        Log.d("MainActivity", "pages : " + book.getPages());
+                        Log.d("MainActivity", "price : " + book.getPrice());
+                        Log.d("MainActivity", "press : " + book.getPress());
+                    }
+            2）查询某一条数据（指定id）
+                语法 ：数据表类名(不带.java)> 对象名称 = LitePal.find(数据表类名(带.java), id);
+                例 ：List<Book> books = LitePal.findAll(Book.class);
+                实例 ：查询id=1的数据
+                    Book book = LitePal.find(Book.class, 1);
+                    Log.d("MainActivity", "id : " + book.getId());
+                    Log.d("MainActivity", "name : " + book.getName());
+                    Log.d("MainActivity", "author : " + book.getAuthor());
+                    Log.d("MainActivity", "pages : " + book.getPages());
+                    Log.d("MainActivity", "price : " + book.getPrice());
+                    Log.d("MainActivity", "press : " + book.getPress());
+            3）LitePal.findFirst() ：查询第一行数据
+                语法 ：数据表类名(不带.java)> 对象名称 = LitePal.findFirst(数据表类名(带.java));
+                例 ：Book book = LitePal.findFirst(Book.java);
+            4）LitePal.findLast() ：最后一行数据
+                语法 ：数据表类名(不带.java)> 对象名称 = LitePal.findLast(数据表类名(带.java));
+                例 ：Book book = LitePal.findLast(Book.java);
+
+            5）LitePal.select() ：指定查询哪几列的数据
+                语法 ：List<数据表类名(不带.java)> 列表名称 = LitePal.select(指定查询的列名称).find(数据表类名(带.java));
+                例 ：List<Book> books =  LitePal.select("name", "pages").find(Book.java);  (只查询 name 和 pages两列)
+            6）LitePal.where() : 添加约束条件查询
+                语法 ：List<数据表类名(不带.java)> 列表名称 = LitePal.where(约束条件).find(数据表类名(带.java));
+                例 ：List<Book> books =  LitePal.where("id<?", "3").find(Book.java);  (查询id<3的数据行)
+            7）LitePal.order() ：用于指定结果的排序方式（升降序）
+                语法 ：List<数据表类名(不带.java)> 列表名称 = LitePal.order(约束条件).find(数据表类名(带.java));
+                例 ：List<Book> books =  LitePal.order(price desc").find(Book.java);  (查询结果按price列降序排列)
+              desc ：表示降序； asc或者不写 ：表示升序
+            8）LitePal.limit() ：指定查询结果的数量（取查询结果的前num条）
+                语法 ：List<数据表类名(不带.java)> 列表名称 = LitePal.limit(int num).find(数据表类名(带.java));
+                例 ：List<Book> books =  LitePal.limit(3).find(Book.java);  (查询结果取前三行)
+            9）LitePal.offset() ：指定查询结果的偏移量（查询结果向后偏移）
+                语法 ：List<数据表类名(不带.java)> 列表名称 = LitePal.offset(int(偏移量)).find(数据表类名(带.java));
+                例 ：List<Book> books =  LitePal.offset(1).find(Book.java);  (查询结果整体向后偏移1位，2、3、4变为3、4、5)
+          5）-----9）这5种方法可以混合使用完成复杂条件查询
+        8】LitePal 也支持使用SQL原生语言查询
+            语法 ：Cursor 对象名称 = LitePal.findBySQL(SQL原生语言)；
+            参数1 ：位SQL语言
+            后续参数 ：占位符内容
+七、跨程序共享数据--内容提供器
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
