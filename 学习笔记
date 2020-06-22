@@ -1340,23 +1340,208 @@ Android学习笔记
                             STORAGE     ：    READ_EXTERNAL_STORAGE   、  WRITE_EXTERNAL_STORAGE
                     注意 ：我们进行权限处理时是用的权限名，授权后该权限对应的权限组中的所有权限都会被授权
 
+    3、在程序运行时申请权限(以拨打电话为例)
+        1】6.0以下版本实现拨打电话（这种方法只适用于Android6.0以下）
+            1-- 构建一个Intent，将他的action指定为Tntent.ACTION_CALL(系统内置的打电话动作)，在data部分指定协议为tel，号码：10086
+                try {
+                    Intent intent = new Intent(Intent.ACTION_CALL);
+                    intent.setData(Uri.parse("tel:10086"));
+                    startActivity(intent);
+                } catch (SecurityException e) {
+                    e.printStackTrace();
+                }
+                代码放在异常捕获中，防止出现问题
+            2-- 在 AndroidManifest.xml 文件中添加权限声明
+                <uses-permission android:name="android.permission.CALL_PHONE" />
 
+        2】运行时权限的使用
+            1）核心 ：在应用程序运行时用户授权某些危险操作
+            2）权限判断及授权部分代码
+                /** 判断用户是否已经授权该权限
+                 * 方法：ContextCompat.checkSelfPermission
+                 * 参数1 ：context  ； 参数2 ：相关权限名
+                 * 将返回值与对应值进行判断，相等则为已授权
+                 * 授予后直接执行拨打电话的逻辑
+                **/
+                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CALL_PHONE)
+                != PackageManager.PERMISSION_GRANTED) {
+                    /**
+                     * 进行权限授予
+                     * 方法 ：ActivityCompat.requestPermissions
+                     * 参数1 ：Activity实例  ； 参数2 ：申请的权限名，放在数组中   ； 参数3 ：请求码，是唯一值即可（这里用1）
+                     * 此方法在调用后会弹出一个权限申请对话框
+                     * 无论用户同意或拒绝都会调用onRequestPermissionsResult()方法
+                     **/
+                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CALL_PHONE}, 1);
+                } else {
+                    call();
+                }
+            3）拨打电话逻辑代码
+                /**
+                 * 拨打电话逻辑
+                 * */
+                private void call() {
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_CALL);
+                        //此处的电话可以捕获编辑框输入的号码
+                        intent.setData(Uri.parse("tel:10086"));
+                        startActivity(intent);
+                    } catch (SecurityException e) {
+                        e.printStackTrace();
+                    }
+                }
+            4）权限授予返回处理部分代码
+                @Override
+                public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+                    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+                    switch(requestCode) {
+                        case 1:  //此处的 1 为请求码，在权限申请时传入
+                            /**
+                             * 判断权限申请返回结果
+                             * 返回的值为 grantResults
+                             * 下列代码意为 ：同意则调用拨打电话代码，拒绝则显示未授权文本
+                             **/
+                            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                                call();
+                            } else {
+                                Toast.makeText(this, "You denied the permission", Toast.LENGTH_SHORT).show();
+                            }
+                            break;
+                        default:
+                    }
+                }
+            取消权限授予方法 ：setting -> Apps -> 对应应用程序 -> Permission
+            5）在这种方法下也需要 在 AndroidManifest.xml 文件中添加权限声明
 
+    4、访问其他程序中的数据
+        1】内容提供器的两种用法
+            1）使用现有的内容提供器来读取和操作相应程序中的数据
+            2）创建自己的内容提供器给我们的数据提供外部访问接口
+                当应用程序通过内容提供器对其数据听了外部访问接口，那么任何其他应用程序就都可以对这部分数据进行访问
+        2】ContentResolver 的基本用法
+            1）简介 ：借助 ContentResolver 类才能访问内容提供器中共享的数据
+            2）对实例对象的操作 ：
+                1-- 获取实例方法 ：Context中的 getContentResolver() 方法
+              以下四种操作为获取的实例的操作
+                2-- 添加数据 ：insert()
+                3-- 更新数据 ：update()
+                4-- 删除数据 ：delete()
+                5-- 查询数据 ：query()
+              这四种方法不接收表名参数，使用一个Uri唯一参数，被称之为内容URI
+            3）内容URI
+                1-- 简介 ：内容URI给内容提供器中的数据建立了唯一标识符
+                2-- 组成部分 ：authority 和 path
+                3-- authority : 用于对不同程序作区分，一般采用程序包名进行命名
+                4-- path ：用于对同一应用程序不同的表作区分的，通常将path放在authority后面
+                5-- 内容URI的标准写法 ：
+                    content://com.example.app.provider/table1
+                    content://com.example.app.provider/table2
+                              ----------------------- -------
+                              authority（c开始）       path（/开始）
+                6-- 将URI字符串解析为Uri对象 ：Uri.parse()方法
+                    Uri uri = Uri.parse("content://com.example.app.provider/table1");
+            4）查询数据
+                1-- 语法 ：
+                    Cursor cursor = getContentResolver().query(
+                        uri,            //指定需要查询的数据表
+                        projection,     //指定查询的列名
+                        selection,      //约束条件
+                        selectionArgs,  //约束条件中的占位符补充
+                        sortOrder       //查询结果的排序方式
+                    );
+                2-- 查询之后从 Cursor 对象中取出数据即可
+            5）添加数据
+                1-- 新建一个ContentValues对象，将数据保存进去,例：
+                    ContentValues values = new  ContentValues();
+                    values.put("column1", "text");  //添加第一列的内容
+                    values.put("column2", 1);  //添加第二列内容
+                2-- 调用 getContentResolver().insert()方法保存即可
+                    参数1 ：Uri对象  ； 参数2 ：ContentValues对象
+                    保存 ：getContentResolver().insert(uri, values);
+            6）更新数据
+                1--  新建一个ContentValues对象，将需要更新的数据保存进去（只需要保存需要更新的部分）
+                    ContentValues values = new  ContentValues();
+                    values.put("column1", "");  //保存需要更新的内容
+                2-- 调用 getContentResolver().update() 方法更新
+                    参数1 ：Uri对象
+                    参数2 ：ContentValues对象
+                    参数3 ：约束条件
+                    参数4 ：约束条件中的占位符补充（用字符串数组来表示）
+                    更新 ：getContentResolver().insert(uri, values, "column1 = ? and column2 = ?",
+                                                        new String[] {"text", "1"});
 
+            7）删除数据
+                直接调用getContentResolver().delete()方法即可
+                参数1 ：Uri对象
+                参数2 ：约束条件
+                参数3 ：约束条件中的占位符补充（用字符串数组来表示）
+                删除 ：getContentResolver().delete(uri, "column2 = ?", new String[] {"1"})
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+        3】读取系统联系人列表（Contacts module）
+            1）ListView控件初始化和运行时权限申请部分
+                // 获取ListView控件实例
+                ListView contactsView = findViewById(R.id.contacts_view);
+                // 初始化适配器
+                adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, contactsList);
+                // 设置适配器
+                contactsView.setAdapter(adapter);
+                /**
+                 * 运行时权限获取
+                 * 此处授权权限为联系人读取权限
+                 * */
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) !=
+                        PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.READ_CONTACTS}, 1);
+                } else {
+                    readContacts();
+                }
+            2）联系人获取部分
+                private void readContacts() {  // 读取联系人列表
+                    Cursor cursor = null;
+                    try {
+                        // 进行联系人查询， "ContactsContract.CommonDataKinds.Phone.CONTENT_URI" 系统包装好的Uri对象
+                        cursor = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
+                        if (cursor != null) {  //判断查询结果飞空
+                            while(cursor.moveToNext()) {  // 非空情况下一项一项读取
+                                // 获取联系人名称，"ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME" 联系人姓名这一列对应的常亮
+                                String displayName = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
+                                // 获取联系人电话，"ContactsContract.CommonDataKinds.Phone.NUMBER" 联系人电话这一列对应的常亮
+                                String number = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                                // 添加打ListView控件中
+                                contactsList.add(displayName + "\n" + number);
+                            }
+                            // 刷新ListVIew
+                            adapter.notifyDataSetChanged();
+                        }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                    } finally {
+                        if (cursor != null) {
+                            // 最后需要关闭cursor
+                            cursor.close();
+                        }
+                    }
+                }
+            3）权限授予结果回调部分
+                @Override
+                public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+                    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+                    /**
+                     * 权限授予的结果回调判断
+                     * */
+                    switch (requestCode) {
+                        case 1 :
+                            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                                readContacts();
+                            } else {
+                                Toast.makeText(this, "You denied the permission", Toast.LENGTH_SHORT).show();
+                            }
+                            break;
+                        default:
+                    }
+                }
+            4）在 AndroidManifest.xml 文件中添加权限声明部分
+                <uses-permission android:name="android.permission.READ_CONTACTS"/>
 
 
 
