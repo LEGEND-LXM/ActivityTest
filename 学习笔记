@@ -1543,9 +1543,181 @@ Android学习笔记
             4）在 AndroidManifest.xml 文件中添加权限声明部分
                 <uses-permission android:name="android.permission.READ_CONTACTS"/>
 
+    5、创建内容提供器
+        1】简介 ：使用内容提供器共享数据需要新建一个类继承 ContentProvider 来创建自己的内容提供器，需要重写6个抽象方法
+        2】需要重写的抽象方法 ：
+            1）onCreate()
+                进行内容提供器的初始化，在这里完成数据库的创建和升级，返回true表示内容提供器初始化成功。
+                注意 ：只有当 ContentResolver 尝试访问我们的程序时，内容提供器才会初始化
+                例 ：
+                    @Override
+                    public boolean onCreate() {
+                        return false;
+                    }
+            2）query()
+                用于在内容提供器中查询数据，使用uri参数确定查询的表，用projection参数来确定查询的列，selection和selectionArgs参数为约束条件
+                sortOrder参数用于对结果进行排序，查询结果存放在Cursor对象中返回
+                例 ：
+                    @Nullable  // 表示参数可为空
+                    @Override
+                    public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
+                        return null;
+                    }
+            3）insert()
+                向内容提供器中添加一条数据。使用uri参数确定添加数据的表，待添加数据保存在values参数中。
+                添加完成后，返回一个用于标识这条新纪录的URI
+                例 ：
+                    @Nullable
+                    @Override
+                    public Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
+                        return null;
+                    }
+            4）update()
+                更新内容提供器中的数据，使用uri参数确定更新内容的表，待更新数据保存在values参数中，selection和selectionArgs参数为约束条件，
+                受影响的行将作为返回值返回。
+                例 ：
+                    @Override
+                    public int update(@NonNull Uri uri, @Nullable ContentValues values, @Nullable String selection, @Nullable String[] selectionArgs) {
+                        return 0;
+                    }
+            5）delete()
+                从内容提供器中删除数据。使用uri参数确定需要删除数据的表，selection 和 selectionArgs 为约束条件，被删除
+                的行数被作为返回值返回
+                例 ：
+                     @Override
+                    public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
+                        return 0;
+                    }
+            6）getType()
+                根据传入的内容URI来返回对应的MIME类型
+                例 ：
+                    @Nullable
+                    @Override
+                    public String getType(@NonNull Uri uri) {
+                        return null;
+                    }
 
+        3】解析Uri语句
+            1）构建内容提供器的实质 ：对 uri 语句进行解析，然后根据解析出来的数据对对应的数据库的数据表进行IUDQ操作
+            2）编写内容URI语句 ：内容URI的两种标准写法
+                 1-- content://com.example.app.provider/table1/1 （访问表中id=1的数据）
+                 2-- content://com.example.app.provider/table1 （访问表中所以数据）
+                我们可以使用通配符来分别匹配这两种格式的URI
+                    * ：匹配任意长度的任意字符
+                    例 ：content://com.example.app.provider/*  ：匹配任意表的内容URI语句
+                    # ：匹配任意长度的数字
+                    例 ：content://com.example.app.provider/table1/#  ：匹配table1表中任意一行的内容URI语句
+        4】使用方法 ：
+            1）新建一个类继承 ContentProvider 来创建自己的内容提供器
+            2）在这个新建类中重写6个方法（参考2】）
+            3）解析URI语句（URI语句的格式参考3】）
+                解析方法 ：
+                    借助 UriMatcher 这个类可以实现匹配内容URI的功能。UriMatcher 听了addURI()方法，将authority、path和一个自定义代码传进去，
+                  这样在调用 UriMatcher 的 match()方法时就可以将Uri对象传入，返回值就是能够匹配这个Uri对象的自定义代码，利用这个代码，我们就
+                  可以判断出期望访问的数据表了。
+                    示例 ：(创建一个内容提供器)
+                        public class MyProvider extends ContentProvider {
+                        /**
+                         * 新增4个微型常量
+                         * TABLE1_DIR ：访问table1表的全部数据
+                         * TABLE1_ITEM ：访问table1表中的单条数据
+                         * TABLE2_DIR ：访问table2表的全部数据
+                         * TABLE2_ITEM ：访问table2表中的单条数据
+                         * */
+                        public static final int TABLE1_DIR = 0;
+                        public static final int TABLE1_ITEM = 1;
+                        public static final int TABLE2_DIR = 2;
+                        public static final int TABLE2_ITEM = 3;
 
+                        public static UriMatcher uriMatcher;  // 创建 UriMatcher 实例
 
+                        static {
+                            /**
+                             * 对 UriMatcher 实例进行初始化；
+                             * 调用addURI()将期望匹配的内容URI格式传入进去；
+                             * 传入的参数可以使用通配符；
+                             * 当调用query()方法时会通过 UriMatcher 对象的match()方法对传入的URI，
+                             * 与addURI()事先传入的进行匹配，如果匹配成功会返回自定义代码，从而进行对应操作；
+                             * delete()、insert()、update()的使用与query()相似
+                             * */
+                            uriMatcher = new UriMatcher(uriMatcher.NO_MATCH);
+                            uriMatcher.addURI("com.example.app.provide", "table1", TABLE1_DIR);
+                            uriMatcher.addURI("com.example.app.provide", "table1/#", TABLE1_ITEM);
+                            uriMatcher.addURI("com.example.app.provide", "table2", TABLE2_DIR);
+                            uriMatcher.addURI("com.example.app.provide", "table2/#", TABLE2_ITEM);
+                        }
+
+                        @Override
+                        public boolean onCreate() {
+                            return false;
+                        }
+
+                        @Nullable
+                        @Override
+                        public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
+                            switch (uriMatcher.match(uri)) {
+                                case TABLE1_DIR :
+                                    // 查询table1表中的所有数据
+                                    break;
+                                case TABLE1_ITEM :
+                                    // 查询table1表中的单条数据
+                                    break;
+                                case TABLE2_DIR :
+                                    // 查询table2表中的所有数据
+                                    break;
+                                case TABLE2_ITEM :
+                                    // 查询table2表中的单条数据
+                                    break;
+                                default:
+                                    break;
+                            }
+                            return null;
+                        }
+
+                        @Nullable
+                        @Override
+                        public Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
+                            return null;
+                        }
+
+                        @Override
+                        public int update(@NonNull Uri uri, @Nullable ContentValues values, @Nullable String selection, @Nullable String[] selectionArgs) {
+                            return 0;
+                        }
+
+                        @Override
+                        public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
+                            return 0;
+                        }
+                        /**
+                         * 关于getType
+                         * 作用 ：用于获取Uri对象所对应的MIME类型
+                         * 内容URI对应的MIME组成 ：
+                         *      必须以vnd开头
+                         *      如果内容URI以路径结尾，则后接android. cursor.dir/,如果内容URI以id结尾,则后接android. cursor.item/
+                         *      最后接上 vnd.<authority>.<path>
+                         *   例 ：content://com.example.app.provider/table1 的MIME类型 vnd.android. cursor.dir/vnd.com.example.app.provider.table1
+                         *   例 ：content://com.example.app.provider/table1/1 的MIME类型 vnd.android. cursor.item/vnd.com.example.app.provider.table1
+                         * */
+                        @Nullable
+                        @Override
+                        public String getType(@NonNull Uri uri) {
+                            switch (uriMatcher.match(uri)) {
+                                case TABLE1_DIR :
+                                    return "vnd.android. cursor.dir/vnd.com.example.app.provider.table1";
+                                case TABLE1_ITEM :
+                                    return "vnd.android. cursor.item/vnd.com.example.app.provider.table1";
+                                case TABLE2_DIR :
+                                    return "vnd.android. cursor.dir/vnd.com.example.app.provider.table2";
+                                case TABLE2_ITEM :
+                                    return "vnd.android. cursor.item/vnd.com.example.app.provider.table2";
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                  注意 ：这里必须要匹配到才能进行相关操作，所以只要不将隐私数据表添加进去就不会泄露隐私
+            4）
 
 
 
