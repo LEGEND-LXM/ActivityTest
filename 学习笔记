@@ -1717,14 +1717,57 @@ Android学习笔记
                         }
                     }
                   注意 ：这里必须要匹配到才能进行相关操作，所以只要不将隐私数据表添加进去就不会泄露隐私
-            4）
+    6、实现跨程序数据共享
+        1】在 database module的基础上，通过内容提供器给它加入外部访问接口
+        2】快速新建内容提供器 ：
+            1) New -> Other -> Content -> Provider 可以打开内容提供器新建选项卡
+                1-- authority : 指定应用程序的数据库命名（Uri语句中的authority）
+                2-- Exported ：此复选框表示是否允许外部程序访问
+                3-- Enabled ：此复选框表示是否启用内容提供器
+        3】代码部分参考 database/java/com.example.database/MyContentProvider.java
+        4】内容提供器需要在 AndroidManifest.xml 文件中注册（采用快捷生成的会自动注册）
+            注册代码示例 ：
+                <provider
+                    android:name=".MyContentProvider"  // 指定 内容提供器的类名
+                    android:authorities="com.example.database.provider"  // 指定了authorities
+                    android:enabled="true"  // 启用内容提供器
+                    android:exported="true"></provider>  // 允许其他出访问
 
+八、运用手机多媒体
+    1、在手机上运行程序
+        1】准备 ：
+            1-- 打开开发者模式
+            2-- 设置 -> 开发者选项 -> 允许USB调试
+            3-- 运行项目前选择设备为连接的设备
+    2、使用通知  // 注意 ：以下代码仅对低版本Android有效 7.0 以下（6.0可以正常运行）
+        1】简介 ：后台程序向用户发送的提示性信息，显示在手机顶部的状态栏中
+        2】基本用法
+            1）通知很灵活，既可以在活动里创建，又可以在广播接收器中创建也可以在服务里创建（创建的步骤是相似的）
+            2）首先需要一个 NotificationManager 来对通知进行管理，，调用 Context 的 getSystemService() 来获取
+                getSystemService() 接收一个字符串参数用于确定获取系统的哪个服务，这里传入 Context.NOTIFICATION
+                例 ：
+                    NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            3）使用 Builder 构造器来创建 Notification 对象，使用support-v4 库中提供的 NotificationCompat 类来创建可以保证我们程序在
+                多个Android版本的兼容性
+                例 ：Notification notification = new NotificationCompat.Builder(context).build();
+                1-- 上述方法只是创建了一个空的 Notification 我们可以在最终的build()方法前添加多个设置方法来创建一个丰富的 Notification
+                    例 ：Notification notification = new NotificationCompat.Builder(context)
+                                                    .setContentTitle("This is content title")
+                                                    .setContentText("This is content text")
+                                                    .setWhen(System.currentTimeMillis())
+                                                    .setSmallIcon(R.drawable.small_icon)
+                                                    .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.large_icon))
+                                                    .build();
+                    解释 ：
+                        1- setContentTitle("This is content title") ：指定通知的标题内容
+                        2- setContentText("This is content text") ：指定通知的正文内容
+                        3- setWhen(System.currentTimeMillis()) ：指定通知被创建的时间，以毫秒为单位，当下拉状态栏时，这里指定的时间会显示在相应的通知里
+                        4- setSmallIcon(R.drawable.small_icon) ：设置通知的小图标，只能使用alpha图层的图片，小图标会显示在通知栏上
+                        5- setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.large_icon)) ：设置通知的大图标，下拉状态栏时就可以看见
 
-
-
-
-
-
+            4）完成上述设置后，调用 NotificationManager 的 notify() 方法就可以显示通知了
+                1-- 参数1 ：通知的ID，每一个通知的id都不相同
+                    参数2 ：Notification对象
 
 
 
