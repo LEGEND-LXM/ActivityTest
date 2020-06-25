@@ -1741,7 +1741,7 @@ Android学习笔记
             3-- 运行项目前选择设备为连接的设备
     2、使用通知  // 注意 ：以下代码仅对低版本Android有效 7.0 以下（6.0可以正常运行）
         1】简介 ：后台程序向用户发送的提示性信息，显示在手机顶部的状态栏中
-        2】基本用法
+        2】基本用法（4.0~7.0版本可用）
             1）通知很灵活，既可以在活动里创建，又可以在广播接收器中创建也可以在服务里创建（创建的步骤是相似的）
             2）首先需要一个 NotificationManager 来对通知进行管理，，调用 Context 的 getSystemService() 来获取
                 getSystemService() 接收一个字符串参数用于确定获取系统的哪个服务，这里传入 Context.NOTIFICATION
@@ -1768,9 +1768,50 @@ Android学习笔记
             4）完成上述设置后，调用 NotificationManager 的 notify() 方法就可以显示通知了
                 1-- 参数1 ：通知的ID，每一个通知的id都不相同
                     参数2 ：Notification对象
+        3】基本用法（7.0版本以上）
+          创建两个全局属性 ：
+            // NotificationManager对象声明
+            private NotificationManager manager;
+            // 通知渠道id
+            private String CHANNEL_ID = "my_channel_01";
+            1）创建通知渠道(封装到函数中)
+                1-- 构建一个在软件包内具有唯一 ID 的通知渠道对象。
+                2-- 为该通知渠道对象配置所需的任何初始设置（例如提示音以及对用户可见的可选说明）。
+                3-- 将通知渠道对象提交到通知管理器。
+              注意 ：如果试图使用初始值创建的通知渠道已存在，不会执行任何操作，因此启动应用时可以放心地执行以上步骤序列
+                4-- 示例代码 ：
+                    @RequiresApi(api = Build.VERSION_CODES.O)
+                        private void createNotificationChannel () {
+                            manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
+                            // 通知渠道的id CHANNEL_ID
+                            // 用户可以看到的通知渠道的名字.
+                            CharSequence name = getString(R.string.channel_name);
+                            // 用户可以看到的通知渠道的描述
+                            String description = getString(R.string.channel_description);
+                            int importance = NotificationManager.IMPORTANCE_HIGH;
+                            NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, name, importance);
+                            // 配置通知渠道的属性
+                            mChannel.setDescription(description);
+                            // 设置通知出现时的闪灯（如果 android 设备支持的话）
+                            mChannel.enableLights(true);
+                            mChannel.setLightColor(Color.RED);
+                            // 设置通知出现时的震动（如果 android 设备支持的话）
+                            mChannel.enableVibration(true);
+                            mChannel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+                            //最后在notificationmanager中创建该通知渠道
+                            manager.createNotificationChannel(mChannel);
+                        }
+        3）创建通知
+            // 调用创建渠道函数
+            createNotificationChannel();
 
-
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(MainActivity.this, CHANNEL_ID)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle(getString(R.string.title))
+                    .setContentText(getString(R.string.text))
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+            manager.notify(1, builder.build());
 
 
 
