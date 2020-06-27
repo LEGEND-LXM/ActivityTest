@@ -1768,7 +1768,7 @@ Android学习笔记
             4）完成上述设置后，调用 NotificationManager 的 notify() 方法就可以显示通知了
                 1-- 参数1 ：通知的ID，每一个通知的id都不相同
                     参数2 ：Notification对象
-        3】基本用法（7.0版本以上）
+        3】基本用法（兼容低版本）
           创建两个全局属性 ：
             // NotificationManager对象声明
             private NotificationManager manager;
@@ -1779,49 +1779,110 @@ Android学习笔记
                 2-- 为该通知渠道对象配置所需的任何初始设置（例如提示音以及对用户可见的可选说明）。
                 3-- 将通知渠道对象提交到通知管理器。
               注意 ：如果试图使用初始值创建的通知渠道已存在，不会执行任何操作，因此启动应用时可以放心地执行以上步骤序列
-                4-- 示例代码 ：
-                    @RequiresApi(api = Build.VERSION_CODES.O)
-                        private void createNotificationChannel () {
-                            manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                4-- 示例代码 ：// 可反复执行，有版本判断机制，已创建的渠道不会再次创建
+                    /**
+                     * importance ：此参数确定出现任何属于此渠道的通知时如何打断用户
+                     * Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                     *      Build.VERSION.SDK_INT ：获取当前android版本号
+                     *      此句的作用是获取版本号并判断，这样在低版本时就不需要创建通知渠道
+                     * */
+                    private void createNotificationChannel () {
 
-                            // 通知渠道的id CHANNEL_ID
-                            // 用户可以看到的通知渠道的名字.
-                            CharSequence name = getString(R.string.channel_name);
-                            // 用户可以看到的通知渠道的描述
-                            String description = getString(R.string.channel_description);
-                            int importance = NotificationManager.IMPORTANCE_HIGH;
-                            NotificationChannel mChannel = new NotificationChannel(CHANNEL_ID, name, importance);
-                            // 配置通知渠道的属性
-                            mChannel.setDescription(description);
-                            // 设置通知出现时的闪灯（如果 android 设备支持的话）
-                            mChannel.enableLights(true);
-                            mChannel.setLightColor(Color.RED);
-                            // 设置通知出现时的震动（如果 android 设备支持的话）
-                            mChannel.enableVibration(true);
-                            mChannel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
-                            //最后在notificationmanager中创建该通知渠道
-                            manager.createNotificationChannel(mChannel);
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                CharSequence name = getString(R.string.channel_name);
+                                String description = getString(R.string.channel_description);
+                                int importance = NotificationManager.IMPORTANCE_DEFAULT;
+                                NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+                                channel.setDescription(description);
+                                // Register the channel with the system; you can't change the importance
+                                // or other notification behaviors after this
+                                manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                                manager.createNotificationChannel(channel);
+                            }
                         }
-        3）创建通知
-            // 调用创建渠道函数
-            createNotificationChannel();
+            2）创建通知
+                // 调用创建渠道函数
+                createNotificationChannel();
+                /**
+                 * 创建通知内容
+                 * setContentTitle(getString(R.string.title)) ：设置通知的标题
+                 * setContentText("This is Text") ：设置通知的正文
+                 * setSmallIcon(R.mipmap.ic_launcher) ：设置通知小图标
+                 * setPriority(NotificationCompat.PRIORITY_DEFAULT) ：设置通知优先级
+                 * setStyle() ：设置通知的样式模板
+                 * */
+                NotificationCompat.Builder builder = new NotificationCompat.Builder(MainActivity.this, CHANNEL_ID)
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle(getString(R.string.title))
+                        .setContentText(getString(R.string.text))
+                        .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                manager.notify(1, builder.build());
+        4】创建通知的点按操作
+            1）简介 ：通知的点按操作用于点击消息打开对应的应用以及获得
+            2）使用方法 ：
+                1-- 创建 Intent 对象，初始化并关联需要打开的活动
+                    Intent intent = new Intent(this, AlertDetails.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(MainActivity.this, CHANNEL_ID)
-                    .setSmallIcon(R.mipmap.ic_launcher)
-                    .setContentTitle(getString(R.string.title))
-                    .setContentText(getString(R.string.text))
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-            manager.notify(1, builder.build());
+                    setFlags() ：帮助保留用户在通过通知打开应用后的预期导航体验，是否要使用这一方法取决于您要启动的 Activity 类型，类型包括 ：
+                        1- 专用于响应通知的 Activity，此 Activity不会被打开
+                        2- 应用的常规应用流程中存在的 Activity，创建返回栈，并打开 Activity
+                2-- 创建 PendingIntent 对象并调用 PendingIntent.getActivity() 方法关联Intent
+                    PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+                3-- NotificationCompat.Builder 对象调用 setContentIntent(pendingIntent) 方法来添加点按操作
+                4-- NotificationCompat.Builder 对象调用 setAutoCancel(true) 方法来在点击通知后移除通知
+                5-- 示例代码 ：
+                    createNotificationChannel();
 
-
-
-
-
-
-
-
-
-
+                    Intent intent = new Intent(MainActivity.this, MyNotification.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    PendingIntent pendingIntent = PendingIntent.getActivity(MainActivity.this, 0, intent, 0);
+                    /**
+                     * 创建通知内容
+                     * setContentTitle(getString(R.string.title)) ：设置通知的标题
+                     * setContentText("This is Text") ：设置通知的正文
+                     * setSmallIcon(R.mipmap.ic_launcher) ：设置通知小图标
+                     * setPriority(NotificationCompat.PRIORITY_DEFAULT) ：设置通知优先级
+                     * setStyle() ：设置通知的样式模板
+                     * setAutoCancel(true) : 点按通知后自动移除通知
+                     * setContentIntent(pendingIntent) : 添加点按操作
+                     * */
+                    NotificationCompat.Builder builder = new NotificationCompat.Builder(MainActivity.this, CHANNEL_ID)
+                            .setSmallIcon(R.mipmap.ic_launcher)
+                            .setContentTitle(getString(R.string.title))
+                            .setContentText(getString(R.string.text))
+                            .setAutoCancel(true)
+                            .setContentIntent(pendingIntent)
+                            .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                    manager.notify(1, builder.build());
+        5】进阶用法
+            1）播放音乐
+                1-- NotificationCompat.Builder 对象的 setSound() 方法
+                2-- 参数为Uri对象，调用 Uri.fromFile(音频路径) 作为setSound()参数
+            2）震动
+                1-- NotificationCompat.Builder 对象的 setVibrate() 方法
+                2-- 参数为 long[] 单数下标表示手机震动的时间，双数下标(包括0)表示手机静止的时间(单位ms)
+                    例如 ：setVibrate(new long[] {0, 1000, 1000, 1000})  表示通知发布后先静止0ms，再振动1s，再静止1s，再振动1s
+                3-- 添加权限声明 ：<uses-permission android:name="android.permission.VIBRATE" />
+            3）控制LED指示灯
+                1-- NotificationCompat.Builder 对象的 setLights() 方法
+                2-- 参数1 ：灯的颜色，例如Color.GREEN表示绿色
+                    参数2 ：int类型数据，亮的时长（单位ms）
+                    参数3 ：int类型数据，熄灭的时长（单位ms）
+                  参数2 和 参数3 一起作用实现指示灯的闪烁
+            4）使用默认效果
+                1-- NotificationCompat.Builder 对象的 setDefaults() 方法
+                2-- 参数为 NotificationCompat.DEFAULT_ALL
+                这个设置会根据当前环境选择铃声、振动方式
+        6】通知的高级功能
+            1）setStyle() 方法 ：设置通知样式，允许我们构建富文本通知
+                1-- 参数 ：NotificationCompat.Style 对象
+                2-- 常见的使用方法
+                    1-- 显示超长文本
+                        .setStyle(new NotificationCompat.BigTextStyle().bigText(需要显示的文本))
+                    2- 显示长图片
+                        .setStyle(new NotificationCompat.BigPictureStyle().bigPicture(BitmapFactory.decodeResources(getResources(), 图片路径（例R.drawable.xxx）)))
+                        itmapFactory.decodeResources(getResources(), 图片路径（例R.drawable.xxx）) 用于将图片解析为 Bitmap对象
 
 
 
