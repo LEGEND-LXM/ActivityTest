@@ -1882,8 +1882,75 @@ Android学习笔记
                         .setStyle(new NotificationCompat.BigTextStyle().bigText(需要显示的文本))
                     2- 显示长图片
                         .setStyle(new NotificationCompat.BigPictureStyle().bigPicture(BitmapFactory.decodeResources(getResources(), 图片路径（例R.drawable.xxx）)))
-                        itmapFactory.decodeResources(getResources(), 图片路径（例R.drawable.xxx）) 用于将图片解析为 Bitmap对象
+                        BitmapFactory.decodeResources(getResources(), 图片路径（例R.drawable.xxx）) 用于将图片解析为 Bitmap对象
 
+    2、调用摄像头和相册
+        1】调用摄像头拍照
+            1）请求相机功能
+                1-- 应用依赖于相机（没有相机将无法运行），在 AndroidManifest.xml 中添加声明
+                    <uses-feature android:name="android.hardware.camera"
+                                  android:required="true" />
+                2-- 应用可以使用相机，但不使用可以运行其他功能
+                    <uses-feature android:name="android.hardware.camera"
+                            android:required="false"/>
+                    此种情况下应调用 hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY) 检查相机的可用性
+
+            2）使用相机应用拍照
+               利用Intent启用相机,注意要判断是否Intent对象是否可以被使用
+                    /**
+                     * 此函数作用为打开相机
+                     * takePictureIntent.resolveActivity() ：判断takePictureIntent是否能被处理，如果不能处理
+                     * 强制使用此Intent对象的话会使程序崩溃
+                     * */
+                    private void dispatchTakePictureIntent() {
+                        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+                        }
+                    }
+              注意 ：到此处已经可以实现拍照功能，但是拍照后的照片无法保存和使用
+            3）获取缩略图
+                Android相机应用会对返回Intent（作为extra中的小型Bitmap传递给 onActivityResult()，使用键 "data"）中的照片进行编码
+                示例代码 ：
+                    /**
+                     * 此函数为启动其他 Activity 后返回此 Activity 的处理函数
+                     * 先根据 requestCode 确定从哪个活动返回
+                     * 再根据 resultCode 判断返回结果
+                     * 然后在 （Intent）data 中用键 “data” 取出照片的省略图
+                     * */
+                    @Override
+                    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+                        super.onActivityResult(requestCode, resultCode, data);
+                        switch (requestCode) {
+                            case REQUEST_IMAGE_CAPTURE:
+                                if (resultCode == RESULT_OK) {
+                                    Bundle bundle = data.getExtras();
+                                    Bitmap imageBitmap = (Bitmap) bundle.get("data");
+                                    picture.setImageBitmap(imageBitmap);
+                                }
+                        }
+                    }
+            4）保存完整尺寸的照片
+                1-- 保存完整的图片需要为相机应用指定一个文件来保存，必须为应用程序应保存照片的位置提供一个完全限定的文件名称
+                2-- 将照片保存在设备的公共外部存储设备中，以供所有应用都可以访问，合适的共享照片目录由具有 DIRECTORY_PICTURES 参数的
+                    getExternalStoragePublicDirectory() 提供，因此对该目录执行读写操作分别需要 READ_EXTERNAL_STORAGE 和 WRITE_EXTERNAL_STORAGE 权限。
+                    拥有写入权限即暗示可以读取，因此需要申请写入权限 ：
+                        <uses-permission
+                                android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+                3-- 如果希望这些照片仍仅对其它应用保持私密状态，可以改用 getExternalFilesDir() 提供的目录。在 Android 4.3 及更低版本中，向此目录写
+                  入还需要 WRITE_EXTERNAL_STORAGE 权限。从 Android 4.4 开始不再需要此权限，因为其他应用无法访问该目录，因此您可以通过添加 maxSdkVersion
+                  属性来声明应仅在较低版本的 Android 上请求此权限：
+                    <uses-permission
+                            android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+                            android:maxSdkVersion="18"/>
+                注意：卸载应用后，在 getExternalFilesDir() 或 getFilesDir() 提供的目录中保存的文件会被删除。
+                  确定文件目录后，还需要指定一个不会跟其他文件产生冲突的文件名。可以将该路径保存在成员变量中以供日后使用。下面是某个方法中的示例解决方案，
+                针对使用日期-时间戳的新照片返回一个独一无二的文件名。
+                4-- 您需要配置 FileProvider。在 AndroidManifest.xml 中，添加提供器：
+
+
+            5）将照片添加到图库
+            6）对调整后的图片进行解码
 
 
 
