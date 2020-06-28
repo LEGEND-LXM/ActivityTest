@@ -1931,24 +1931,173 @@ Android学习笔记
                         }
                     }
             4）保存完整尺寸的照片
-                1-- 保存完整的图片需要为相机应用指定一个文件来保存，必须为应用程序应保存照片的位置提供一个完全限定的文件名称
-                2-- 将照片保存在设备的公共外部存储设备中，以供所有应用都可以访问，合适的共享照片目录由具有 DIRECTORY_PICTURES 参数的
-                    getExternalStoragePublicDirectory() 提供，因此对该目录执行读写操作分别需要 READ_EXTERNAL_STORAGE 和 WRITE_EXTERNAL_STORAGE 权限。
-                    拥有写入权限即暗示可以读取，因此需要申请写入权限 ：
-                        <uses-permission
-                                android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-                3-- 如果希望这些照片仍仅对其它应用保持私密状态，可以改用 getExternalFilesDir() 提供的目录。在 Android 4.3 及更低版本中，向此目录写
-                  入还需要 WRITE_EXTERNAL_STORAGE 权限。从 Android 4.4 开始不再需要此权限，因为其他应用无法访问该目录，因此您可以通过添加 maxSdkVersion
-                  属性来声明应仅在较低版本的 Android 上请求此权限：
-                    <uses-permission
-                            android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-                            android:maxSdkVersion="18"/>
-                注意：卸载应用后，在 getExternalFilesDir() 或 getFilesDir() 提供的目录中保存的文件会被删除。
-                  确定文件目录后，还需要指定一个不会跟其他文件产生冲突的文件名。可以将该路径保存在成员变量中以供日后使用。下面是某个方法中的示例解决方案，
-                针对使用日期-时间戳的新照片返回一个独一无二的文件名。
-                4-- 您需要配置 FileProvider。在 AndroidManifest.xml 中，添加提供器：
+                1-- 申请相机使用权限 ：<uses-permission android:name="android.permission.CAMERA" />
+                2-- 相机运行时权限申请 ：
+                    /**
+                     * 相机运行时权限获取
+                     * */
+                    private void checkPermissionAndCamera() {
+                        int hasCameraPermission = ContextCompat.checkSelfPermission(getApplication(),
+                                Manifest.permission.CAMERA);
+                        if (hasCameraPermission == PackageManager.PERMISSION_GRANTED) {
+                            //有权限，调起相机拍照。
+                            dispatchTakePictureIntent();
+                        } else {
+                            //没有权限，申请权限。
+                            ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.CAMERA},
+                                    PERMISSION_CAMERA_REQUEST_CODE);
+                        }
+                        Log.d("MainActivity", "checkPermissionAndCamera succeed");
+                    }
+                3-- 运行时函数申请回调函数 ：判断权限是否被允许
+                    /**
+                     * 申请运行时函数的回调函数
+                     * */
+                    @Override
+                    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+                        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+                        switch (requestCode) {
+                            case PERMISSION_CAMERA_REQUEST_CODE:
+                                if (grantResults.length > 0
+                                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                                    //允许权限，有调起相机拍照。
+                                    dispatchTakePictureIntent();
+                                } else {
+                                    //拒绝权限，弹出提示框。
+                                    Toast.makeText(this,"拍照权限被拒绝",Toast.LENGTH_LONG).show();
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                        Log.d("MainActivity", "onRequestPermissionsResult succeed");
+                    }
+                4-- 创建相关全局属性
+                    1- 判断 android 版本是否是Android 10以上
+                         private boolean isAndroidQ = Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q;
+                    2- 保存图片的uri ：private Uri mCameraUri;
+                    3- 保存图片的文件路径，Android 10以下使用图片路径访问图片 ：private String mCameraImagePath;
+                5-- 调起相机拍照
+                     /**
+                     * 此函数作用为打开相机
+                     * takePictureIntent.resolveActivity() ：判断takePictureIntent是否能被处理，如果不能处理
+                     * 强制使用此Intent对象的话会使程序崩溃
+                     * photoFile = createImageFile(); : 获取图片文件路径名
+                     * 此处要注意 ：android10以下用图片路径访问保存，android10及以上用图片uri来访问
+                     * */
+                    private void dispatchTakePictureIntent() {
+                        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                            File photoFile = null;
+                            Uri photoUri = null;
 
+                            if (isAndroidQ) {
+                                // 适配android 10
+                                photoUri = createImageUri();
+                            } else {
+                                try {
+                                    photoFile = createImageFile();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                if (photoFile != null) {
+                                    mCameraImagePath = photoFile.getAbsolutePath();
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                                        //适配Android 7.0文件权限，通过FileProvider创建一个content类型的Uri
+                                        photoUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", photoFile);
+                                    } else {
+                                        photoUri = Uri.fromFile(photoFile);
+                                    }
+                                }
+                            }
 
+                            mCameraUri = photoUri;
+                            if (photoUri != null) {
+                                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+                                takePictureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+                            }
+                        }
+                    }
+                6-- 创建图片地址uri,用于保存拍照后的照片 Android 10以后使用这种方法
+                    private Uri createImageUri() {
+                        String status = Environment.getExternalStorageState();
+                        // 判断是否有SD卡,优先使用SD卡存储,当没有SD卡时使用手机存储
+                        if (status.equals(Environment.MEDIA_MOUNTED)) {
+                           return getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, new ContentValues());
+                        } else {
+                            return getContentResolver().insert(MediaStore.Images.Media.INTERNAL_CONTENT_URI, new ContentValues());
+                        }
+                    }
+                7-- 创建保存图片的文件（路径）
+                     /**
+                     * 此函数作用为 ：为照片创建文件
+                     * getExternalFilesDir() ：创建一个共享文件夹
+                     * */
+                    private File createImageFile() throws IOException {
+                        // 创建一个唯一的 image 名称
+                        String imageName = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+                        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+                        if (!storageDir.exists()) {
+                            storageDir.mkdir();
+                        }
+                        File tempFile = new File(storageDir, imageName);
+                        if (!Environment.MEDIA_MOUNTED.equals(EnvironmentCompat.getStorageState(tempFile))) {
+                            return null;
+                        }
+                        return tempFile;
+                    }
+                8-- 在调用相机后的回调函数中接收拍照结果和显示图片
+                    /**
+                     * 此函数为启动其他 Activity 后返回此 Activity 的处理函数
+                     * 先根据 requestCode 确定从哪个活动返回
+                     * 再根据 resultCode 判断返回结果
+                     * 然后在 （Intent）data 中用键 “data” 取出照片的省略图
+                     * */
+                    @Override
+                    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+                        super.onActivityResult(requestCode, resultCode, data);
+                        switch (requestCode) {
+                            case REQUEST_IMAGE_CAPTURE:
+                                if (resultCode == RESULT_OK) {
+                                    if (isAndroidQ) {
+                                        // Android 10 使用图片uri加载
+                                        picture.setImageURI(mCameraUri);
+                                    } else {
+                                        // 使用图片路径加载
+                                        picture.setImageBitmap(BitmapFactory.decodeFile(mCameraImagePath));
+                                    }
+                                } else {
+                                    Toast.makeText(this, "取消", Toast.LENGTH_LONG).show();
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                  关于 7-- 和 8-- ：Android 10由于文件权限的关系，显示手机储存卡里的图片不能直接使用图片路径，需要使用图片uri加载。
+                9-- 配置文件共享
+                    <provider
+                        android:name="androidx.core.content.FileProvider"
+                        android:authorities="${applicationId}.provider"
+                        android:exported="false"
+                        android:grantUriPermissions="true">
+                        <meta-data
+                            android:name="android.support.FILE_PROVIDER_PATHS"
+                            android:resource="@xml/file_paths"/>
+                    </provider>
+
+                10-- 在res目录下创建文件夹xml ，放置一个文件file_paths.xml(文件名可以随便取)，配置需要共享的文件目录，也就是拍照图片保存的目录。
+                     和 9-- 的 android:resource="@xml/file_paths" 对应
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <paths xmlns:android="http://schemas.android.com/apk/res/android">
+                        <external-files-path
+                            name="my_images"
+                            path="Android/data/com.example.cameraalbum/files/Pictures"/>
+                        </paths>
+                11-- 将图片放在共享储存区需要申请文件读写权限 ：（写权限默认同意读权限）
+                    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+                    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
             5）将照片添加到图库
             6）对调整后的图片进行解码
 
