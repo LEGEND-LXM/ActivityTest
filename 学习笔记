@@ -1327,16 +1327,25 @@ Android学习笔记
                 2-- 危险权限 ：可能会触及到用户隐私或者对设备安全性造成影响的权限（例如：获取通讯录、短信、地理位置），这部分的权限需要用户手动授权
                         所有的危险权限 ：
                              权限组名    ：                  权限名
+                            （日历）
                             CALENDAR    ：    READ_CALENDAR   、   WRITE_CALENDAR
+                            （相机）
                             CAMERA      ：    CAMERA
+                            （联系人）
                             CONTACTS    ：    READ_CONTACTS   、  WRITE_CONTACTS   、  GET_CONTACTS
+                            （位置）
                             LOCATION    ：    ACCESS_FIND_LOCATION   、   ACCESS_COARSE_LOCATION
+                            （麦克风）
                             MICROPHONE  ：    RECORD
+                            （电话）
                             PHONE       ：    READ_PHONE_STATE   、   CALL_PHONE   、  READ_CALL_LOG   、   WRITE_CALL_LOG   、
                                               ADD_VOICEMAIL   、   USE_SIP   、   PROCESS_OUTGOING_CALLS
+                            （传感器）
                             SENSORS     :     BOOY_SENSORS
+                            （信息）
                             SMS         ：    SEND_SMS   、   RECEIVE_SMS    、   READ_SME   、    RECEIVE_WAP_PUSH   、
                                               RECEIVE_MMS
+                            （储物）
                             STORAGE     ：    READ_EXTERNAL_STORAGE   、  WRITE_EXTERNAL_STORAGE
                     注意 ：我们进行权限处理时是用的权限名，授权后该权限对应的权限组中的所有权限都会被授权
 
@@ -2098,8 +2107,8 @@ Android学习笔记
                 11-- 将图片放在共享储存区需要申请文件读写权限 ：（写权限默认同意读权限）
                     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
                     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-            5）将照片添加到图库
-            6）对调整后的图片进行解码
+        2】在相册中选择图片
+
 
 
 

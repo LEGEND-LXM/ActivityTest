@@ -1,0 +1,281 @@
+                                Kotlin 学习笔记
+一、变量和函数
+    1、变量
+        1】类型 ：在 Kotlin 中声明变量只有两种关键字，变量的类型是自推导
+            1）val（value的简写） ：用来声明一个不可变的变量，这种变量在初始赋值之后就再也不能重新赋值，对应Java中的final变量。
+            2）var（variable的简写） ：用来声明一个可变的变量，这种变量在初始赋值之后仍然可以再被重新赋值，对应Java中的非final变量。
+        2】显示声明变量 ：给出预定的类型名
+            1）语法 ：关键字 变量名: 变量类型 = 初始值;
+                示例 ：val a: Int = 10
+            2）java 与 Kotlin 数据类型对照（Kotlin完全抛弃了Java中的基本数据类型，全部使用了对象数据类型）
+                java                        Kotlin                  数据类型说明
+                 int                         Int                       整形
+                long                         Long                     长整形
+                short                        Short                    短整型
+                float                        Float                  单精度浮点型
+                double                       Double                 双精度浮点型
+               boolean                       Boolean                  布尔型
+                char                         Char                     字符型
+                byte                         Bye                      字节型
+    2、函数
+        1】基础语法 ：
+            fun 函数名(参数名:参数类型, 参数名:参数类型（可包含多个参数，也可为空）):函数返回值类型 {
+                函数体
+                return xxx
+            }
+            函数的返回值和函数的接收参数为可选项，fun 为定义函数的关键字
+            示例：
+                fun methodName(param1: Int, param2: Int): Int {
+                    return 0
+                }
+        2】当函数中只有一行代码时
+            fun largerNumber(num1: Int, num2: Int): Int = max(num1, num2)
+            其中 max(num1, num2) 为返回值部分
+            利用 Kotlin 的类型推导机制进一步优化 ：fun largerNumber(num1: Int, num2: Int) = max(num1, num2)
+
+二、程序的逻辑控制
+    1、if条件语句
+        1】基础语法 ：
+            if (判断条件1) {
+                条件1为真运行的代码语句
+            } else if（判断条件2）{
+                条件2为真运行的代码语句
+            } else {
+                条件1和2都为假运行的代码语句
+            }
+        2】Kotlin中的if语句相比于Java有一个额外的功能，它是可以有返回值的，返回值就是if语句每一个条件中最后一行代码的返回值
+            例如 ：
+                val value = if (num1 > num2) {
+                    num1
+                } else {
+                    num2
+                }
+                value 的值为num1 和 num2 中较大的那一个
+                1）if条件句可以直接作为返回值，例 ：
+                    fun largerNumber(num1: Int, num2: Int): Int {
+                        return if (num1 > num2) {
+                            num1
+                        } else {
+                            num2
+                        }
+                    }
+                2）由于函数只有if判断句这个与一行代码相同的作用，所以上述代码可以继续精简为 ：
+                    fun largerNumber(num1: Int, num2: Int) = if (num1 > num2) {
+                        num1
+                    } else {
+                        num2
+                    }
+                3）将if判断句部分精简为一行代码 ：
+                    fun largerNumber(num1: Int, num2: Int) = if (num1 > num2) num1 else num2
+    2、when条件语句
+        1】基础语法 ：
+            when(任意类型参数) {                  例 ：     fun getScore(name: String) = when (name) {
+                匹配值1 -> { 执行逻辑1 }                           "Tom" -> 86
+                匹配值2 -> { 执行逻辑2 }                           "Jim" -> 77
+                匹配值3 -> { 执行逻辑3 }                           "Jack" -> 95
+                匹配值4 -> { 执行逻辑4 }                           "Lily" -> 100
+                ...                                              else -> 0
+                else -> 执行逻辑                            }
+            }
+            1）此语句同样带有返回值，当你的执行逻辑只有一行代码时，{ }可以省略 ：
+            2）when语句还允许进行类型匹配，匹配变量类型
+                例 ：
+                    fun checkNumber(num: Number) {
+                        when (num) {
+                            is Int -> println("number is Int")
+                            is Double -> println("number is Double")
+                            else -> println("number not support")
+                        }
+                    }
+                Number 这是Kotlin内置的一个抽象类，像Int、Long、Float、Double等与数字相关的类都是它的子类，所以就里就可以使用类型匹配来判断传入的参数到底属于什么类型
+            3）不带参数用法 ：将函数的形参作为匹配变量，例 ：
+                fun getScore(name: String) = when {
+                    name == "Tom" -> 86
+                    name == "Jim" -> 77
+                    name == "Jack" -> 95
+                    name == "Lily" -> 100
+                    else -> 0
+                }
+            4）Kotlin中判断字符串或对象是否相等可以直接使用==关键字
+    3、循环语句
+        1】while循环不管是在语法还是使用技巧上都和Java中的while循环没有任何区别
+        2】Java中另一种for-each循环则被Kotlin进行了大幅度的加强，变成了for-in循环，所以我们只需要学习for-in循环的用法就可以了
+            1）区间 ：
+                1-- 双闭区间
+                    val range = 0..10  ：创建了一个0到10的区间，并且两端都是闭区间，用数学的方式表达出来就是[0, 10]
+                    语法解读 ：.. 是创建两端闭区间的关键字，在 .. 的两边指定区间的左右端点就可以创建一个区间了
+                2-- 创建左闭右开区间
+                    val range = 0 until 10 ：创建了一个0到10的左闭右开区间，它的数学表达方式是[0, 10)
+                    语法解读 ：使用until替代 .. 关键字，表示右侧边界不被包括
+                3--  .. 和until关键字创建的是一个升序区间，使用downTo关键字创建一个降序区间
+                    例 ：10 downTo 1  创建了一个[10, 1]的降序区间
+                    降序区间也是可以结合step关键字跳过区间中的一些元素的
+            2）通过 for-in 循环来遍历这个区间
+                for (i in 0..10) {
+                    println(i)
+                }
+            3）使用step关键字
+                for (i in 0 until 10 step 2) {
+                        println(i)
+                    }
+                表示 ：每次执行循环都会在区间范围内递增2，相当于for-i循环中i = i + 2的效果
+
+三、面向对象编程
+    1、类与对象
+        1】使用Android studio自动创建一个类
+            右键相关包 -> Now -> Kotlin File/Class -> 选择Class
+            1）对话框在默认情况下自动选中的是创建一个File，File通常是用于编写Kotlin顶层函数和扩展函数的
+               Class表示创建一个类
+            2）空的类语法及示例
+                语法 ：                                        示例 ：
+                    class 类名称 {                                 class Person {
+
+                    }                                             }
+            3）实例化类
+                语法 ：                                        示例：
+                    val 对象名 = 类名称()                         val p = Person()
+            4）对 对象 的操作
+                例如 ：
+                    class Person {
+                        var name = ""
+                        var age = 0
+
+                        fun eat() {
+                            println(name + " is eating. He is " + age + " years old.")
+                        }
+                    }
+                    fun main() {
+                        val p = Person()  // 实例化类
+                        p.name = "Jack"   // 为对象的字段进行赋值
+                        p.age = 19
+                        p.eat()           // 调用对象的函数
+                    }
+        2】继承与构造函数
+            1）继承类的两大条件
+                1-- 使 被继承类 可以被继承 ：在 被继承类 创建时加上关键字 open
+                    例 ：
+                        open class Person {
+                            ...
+                        }
+                    Kotlin中任何一个非抽象类默认都是不可以被继承的
+                2-- Kotlin中的继承关键字是 :
+                    class Student : Person() {
+                        var sno = ""
+                        var grade = 0
+                    }
+                3-- 关于构造函数 ：Kotlin将构造函数分成了两种：主构造函数和次构造函数。
+                    1- 主构造函数将会是你最常用的构造函数，每个类默认都会有一个不带参数的主构造函数，当然你也可以显式地给它指明参数。主构造函数的特点是没有函数体，直接定义在类名的后面即可
+                            class Student(val sno: String, val grade: Int) : Person() {
+                            }
+                        这就表明在对Student类进行实例化的时候，必须传入构造函数中要求的所有参数
+                            val student = Student("a123", 5)
+                        Kotlin给我们提供了一个init结构体，所有主构造函数中的逻辑都可以写在里面
+                            class Student(val sno: String, val grade: Int) : Person() {
+                                init {
+                                    println("sno is " + sno)
+                                    println("grade is " + grade)
+                                }
+                            }
+                        子类中的构造函数必须调用父类中的构造函数,子类的主构造函数调用父类中的哪个构造函数，在继承的时候通过括号来指定
+                            class Student(val sno: String, val grade: Int) : Person() {
+                            }  在这里，Person类后面的一对空括号表示Student类的主构造函数在初始化的时候会调用Person类的无参数构造函数，即使在无参数的情况下，这对括号也不能省略
+                        如果被继承的类没有无参构造函数，则在继承时需要加上参数 ：
+                            class Student(val sno: String, val grade: Int, name: String, age: Int) :
+                            Person(name, age) {
+                                ...
+                            }
+                    2- 任何一个类只能有一个主构造函数，但是可以有多个次构造函数。次构造函数也可以用于实例化一个类，这一点和主构造函数没有什么不同，只不过它是有函数体的
+                        Kotlin规定，当一个类既有主构造函数又有次构造函数时，所有的次构造函数都必须调用主构造函数（包括间接调用）,例 ：
+                            class Student(val sno: String, val grade: Int, name: String, age: Int) :
+                                     Person(name, age) {
+                                 // 接收name和age参数，然后它又通过this关键字调用了主构造函数，并将sno和grade这两个参数赋值成初始值
+                                constructor(name: String, age: Int) : this("", 0, name, age) {
+                                }
+                                // 不接收任何参数，它通过this关键字调用了我们刚才定义的第一个次构造函数，并将name和age参数也赋值成初始值，间接调用了主构造函数，因此这仍然是合法的
+                                constructor() : this("", 0) {
+                                }
+                            }
+                        次构造函数是通过constructor关键字来定义的
+                            实例化方式 ：
+                                val student1 = Student()
+                                val student2 = Student("Jack", 19)
+                                val student3 = Student("a123", 5, "Jack", 19)
+                    3- 类中只有次构造函数，没有主构造函数
+                        当一个类没有显式地定义主构造函数且定义了次构造函数时，它就是没有主构造函数的
+                            class Student : Person {
+                                constructor(name: String, age: Int) : super(name, age) {
+                                }
+                            }
+                        没有主构造函数，继承Person类的时候也就不需要再加上括号
+                        没有主构造函数，次构造函数只能直接调用父类的构造函数，上述代码也是将this关键字换成了super关键字
+
+        3】接口
+            1）创建接口 ：右击包→New→Kotlin File/Class，在弹出的对话框中输入接口名称，创建类型选择“Interface”
+            2）接口中的函数不要求有函数体，示例 ：
+                interface Study {
+                    fun readBooks()
+                    fun doHomework()
+                }
+            3）继承接口和继承类一样Kotlin中统一使用冒号，中间用逗号进行分隔，接口的后面不用加上括号，因为它没有构造函数可以去调用
+                class Student(name: String, age: Int) : Person(name, age), Study {
+                }
+            4）接口中的函数必须被实现，Kotlin中使用override关键字来重写父类或者实现接口中的函数，例 ：
+                override fun readBooks() {
+                    println(name + " is reading.")
+                }
+            5）面向接口编程 ：多态
+                doStudy()函数接收一个Study类型的参数，由于Student类实现了Study接口，因此Student类的实例是可以传递给doStudy()函数的，接下来我们调用了Study接口的readBooks()和doHomework()函数
+                    fun doStudy(study: Study) {
+                        study.readBooks()
+                        study.doHomework()
+                    }
+            6）允许对接口中定义的函数进行默认实现，接口中的函数可以添加函数体，添加后表示默认执行该函数体，该函数将不被强制重写
+        4】函数的可见性修饰符
+            1）四种函数修饰符 ：public、private、protected 和 internal
+            2）函数修饰符解读 ：
+                1-- public ：表示对所有类都可见，Kotlin中public修饰符是默认项（Java中default才是默认项）
+                2-- private ：表示只对当前类内部可见
+                3-- protected ：对当前类和子类可见
+                4-- internal ：只对同一模块中的类可见
+
+四、数据类与单例类
+    1、数据类 ：用于将服务器端或数据库中的数据映射到内存中，为编程逻辑提供数据模型的支持
+        1】数据类通常需要重写equals()、hashCode()、toString()这几个方法
+        2】equals()方法用于判断两个数据类是否相等
+        3】hashCode()方法作为equals()的配套方法，也需要一起重写，否则会导致HashMap、HashSet等hash相关的系统类无法正常工作
+        4】toString()方法用于提供更清晰的输入日志，否则一个数据类默认打印出来的就是一行内存地址
+        5】创建数据类 ：右击包→New→Kotlin File/Class，在弹出的对话框中输入“类名称”，创建类型选择“Class”
+            然后在创建的类中编写 ：data class 类名称(val brand: String, val price: Double)
+            data关键字时，就表明你希望这个类是一个数据类，Kotlin会根据主构造函数中的参数帮你将equals()、hashCode()、toString()等固定且无实际逻辑意义的方法自动生成
+            当一个类中没有任何代码时，还可以将尾部的大括号省略
+
+    2、单例类
+        1】单例模式 ：用于避免创建重复的对象，比如我们希望某个类在全局最多只能拥有一个实例
+        2】java示例 ：
+            public class Singleton {
+                //
+                private static Singleton instance;
+                // 将Singleton的构造函数私有化，禁止外部创建Singleton的实例
+                private Singleton() {}
+                // 给外部提供了一个getInstance()静态方法用于获取Singleton的实例
+                public synchronized static Singleton getInstance() {
+                    if (instance == null) {
+                        instance = new Singleton();
+                    }
+                    return instance;
+                }
+
+                public void singletonTest() {
+                    System.out.println("singletonTest is called.");
+                }
+            }
+            调用单例类中的方法
+                Singleton singleton = Singleton.getInstance();
+                singleton.singletonTest();
+        3】Kotlin实现 ：需要将class关键字改成object关键字即可
+            1）快捷创建 ：右击包→New→Kotlin File/Class，在弹出的对话框中输入“名称”，创建类型选择“Object”
+                object Singleton {
+                }
+            2）调用内部函数 ：
+                Singleton.singletonTest()
+六、Lambda编程
