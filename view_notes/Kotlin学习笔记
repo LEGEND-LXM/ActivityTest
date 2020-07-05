@@ -279,3 +279,248 @@
             2）调用内部函数 ：
                 Singleton.singletonTest()
 六、Lambda编程
+    1、集合的创建与遍历
+        1】list集合
+            1）创建集合 ：
+                关键字 集合名词 = listof(需要添加的数据（用逗号隔开）)  listOf()函数创建的是一个不可变的集合
+                例 ：val list = listOf("Apple", "Banana", "Orange", "Pear", "Grape")
+            2）遍历集合 ：使用for - in
+                例 ：
+                    for (fruit in list) {
+                        println(fruit)
+                    }
+
+            3）集合相关
+                1-- 不可变集合创建 ：listof()
+                2-- 可变集合创建 ：mutableListOf()
+                    向集合添加内容 ：.add(需要添加的内容)
+
+        2】set集合
+            1）创建可变集合
+                val set = mutableSetOf("Apple", "Banana", "Orange", "Pear", "Grape")
+            2）创建不可变集合
+                val set = setOf("Apple", "Banana", "Orange", "Pear", "Grape")
+            3）Set集合底层是使用hash映射机制来存放数据的，因此集合中的元素无法保证有序
+
+        3】Map集合 ：Map是一种键值对形式的数据结构
+            1）创建Map集合
+                关键字 集合名称 = HashMap<键类型, 数据类型>()
+                例 ：val map = HashMap<String, Int>()
+            2）添加数据
+                集合名称[键名称] = 值
+                例 ：map["Apple"] = 1
+            3）简化版 ：mapOf()-不可变 和 mutableMapOf()-可变
+                创建 ：val map = mapOf("Apple" to 1, "Banana" to 2, "Orange" to 3, "Pear" to 4, "Grape" to 5)
+                to ：一个infix函数
+                遍历 ：for ((fruit, number) in map) {}
+    2、集合的函数式API ：直接对集合进行操作的API
+        1】简介 ：Lambda就是一小段可以作为参数传递的代码
+        2】Lambda表达式的语法结构 ：
+            {参数名1: 参数类型, 参数名2: 参数类型 -> 函数体}
+            1）解读 ：首先最外层是一对大括号，如果有参数传入到Lambda表达式中的话，我们还需要声明参数列表，参数列表的结尾使用一个->符号，
+                表示参数列表的结束以及函数体的开始，函数体中可以编写任意行代码（虽然不建议编写太长的代码），并且最后一行代码会自动作为Lambda表达式的返回值。
+        3】API
+            1）maxBy()函数的工作原理是根据我们传入的条件来遍历集合（返回该条件下的最大值）
+                示例 ：查询最长的字符串
+                        val list = listOf("Apple", "Banana", "Orange", "Pear", "Grape", "Watermelon")
+                        val lambda = { fruit: String -> fruit.length }
+                        val maxLengthFruit = list.maxBy(lambda)
+                    第一次简化 ：直接将lambda表达式传入maxBy函数当中
+                        val maxLengthFruit = list.maxBy({ fruit: String -> fruit.length })
+                    第二次简化 ：Lambda参数是函数的最后一个参数时，可以将Lambda表达式移到函数括号的外面
+                        val maxLengthFruit = list.maxBy() { fruit: String -> fruit.length }
+                    第三次简化 ：Lambda参数是函数的唯一一个参数的话，还可以将函数的括号省略
+                        val maxLengthFruit = list.maxBy { fruit: String -> fruit.length }
+                    第四次简化 ：类型推导机制
+                        val maxLengthFruit = list.maxBy { fruit -> fruit.length }
+                    第五次化简 ：当Lambda表达式的参数列表中只有一个参数时，也不必声明参数名，而是可以使用it关键字来代替
+                        val maxLengthFruit = list.maxBy { it.length }
+            2）map()函数将集合中的每个元素都映射成一个另外的值，映射的规则在Lambda表达式中指定（返回新的集合）
+                示例 ：水果名称大写
+                    val list = listOf("Apple", "Banana", "Orange", "Pear", "Grape", "Watermelon")
+                    val newList = list.map { it.toUpperCase() }
+            3）filter()函数用来过滤集合中的数据，可以单独使用，也可以配合map函数一起使用（返回新的集合）
+                示例 ：保留长度小于等于5个字母的水果并大写
+                    val list = listOf("Apple", "Banana", "Orange", "Pear", "Grape", "Watermelon")
+                    val newList = list.filter { it.length <= 5 }.map { it.toUpperCase() }
+                操作时应该先过滤，再映射，提高代码效率
+            4）any()函数用于判断集合中是否至少存在一个元素满足指定条件（返回true false）
+                示例 ：判断是否有一个长度在5以内
+                    val anyResult = list.any { it.length <= 5 }
+            5）all()函数用于判断集合中是否所有元素都满足指定条件（返回true false）
+                示例 ：判断是否所有的长度在5以内
+                    val allResult = list.all { it.length <= 5 }
+    3、Java函数式API的使用
+        1】简介 ：在Kotlin中调用java中的API
+        2】要求 ：
+            1-- 在Kotlin代码中调用Java方法，该方法接收一个Java单抽象方法接口参数
+            2-- Java单抽象方法接口指的是接口中只有一个待实现方法
+            3-- 常见的抽象方法接口 ：Runnable接口，对于任何一个Java方法，只要它接收Runnable参数，就可以使用函数式API
+        3】案列 ：
+            1）创建子线程 ：
+                java实现 ：
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            System.out.println("Thread is running");
+                        }
+                    }).start();
+                Kotlin实现 ：
+                    Thread(object : Runnable {
+                        override fun run() {
+                            println("Thread is running")
+                        }
+                    }).start()
+              注意 ：Kotlin中匿名类的写法和Java有一点区别，由于Kotlin完全舍弃了new关键字，因此创建匿名类实例的时候就不能再使用new了，而是改用了object关键字。
+                第一次化简 ：
+                    Thread(Runnable {
+                        println("Thread is running")
+                    }).start()
+                解读 ：Runnable类中只有一个待实现方法，即使这里没有显式地重写run()方法，Kotlin也能自动明白Runnable后面的Lambda表达式就是要在run()方法中实现的内容。
+
+                第二次化简 ：如果一个Java方法的参数列表中不存在一个以上Java单抽象方法接口参数，我们还可以将接口名进行省略
+                    Thread({
+                        println("Thread is running")
+                    }).start()
+
+                第三次化简 ：Lambda表达式是方法的最后一个参数时，可以将Lambda表达式移到方法括号的外面。同时，如果Lambda表达式还是方法的唯一一个参数，还可以将方法的括号省略
+                    Thread {
+                        println("Thread is running")
+                    }.start()
+            2）点击事件的Kotlin写法 ：
+                java写法 ：
+                    button.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                        }
+                    });
+                Kotlin写法 ：
+                    button.setOnClickListener {
+                    }
+
+七、空指针检查
+    1、简介 ：
+        空指针异常是当一个不可为空的参数为空时产生的异常，空指针是一种不受编程语言检查的运行时异常，只能由程序员主动通过逻辑判断来避免
+        1】示例 ：
+            public void doStudy(Study study) {
+                study.readBooks();
+                study.doHomework();
+            }
+          如果这个函数传入参数null就会产生空指针异常，程序崩溃
+            添加空指针判断优化 ：
+            public void doStudy(Study study) {
+                if (study != null) {
+                    study.readBooks();
+                    study.doHomework();
+                }
+            }
+    2、可空类型系统
+        1】简介 ：Kotlin利用编译时判空检查的机制几乎杜绝了空指针异常
+            例如 ：Kotlin默认所有的参数和变量都不可为空（传入null参数会报错）
+                fun doStudy(study: Study) {
+                    study.readBooks()
+                    study.doHomework()
+                }
+        2】可为空的类型系统 ：此时某些参数可以为空，但是需要在编译时期就将所有潜在的空指针异常都处理掉，否则代码将无法编译通过
+        3】使用方式 ：就是在类名的后面加上一个问号
+            例 ：Int表示不可为空的整型，而Int?就表示可为空的整型；String表示不可为空的字符串，而String?就表示可为空的字符串
+            此时需要有参数为空判断处理机制 ：
+                fun doStudy(study: Study?) {
+                    if (study != null) {
+                        study.readBooks()
+                        study.doHomework()
+                    }
+                }
+    3、判空辅助工具（为避免混淆，操作符采用()写法，括号内部为操作符）
+        1】简介 ：用来进行判空处理操作
+        2】常见操作 ：
+            1）(?.) ：此操作符用于判断操作符前的参数是否为空，为空什么都不执行，不为空则执行操作符后面的操作
+                示例 ：
+                    if (a != null) {
+                        a.doSomething()      ==》      a?.doSomething()
+                    }
+
+                    if (study != null) {
+                        study.readBooks()      ==》     study?.readBooks()
+                        study.doHomework()              study?.doHomework()
+                    }
+            2）(?:) ：左右两边都接收一个表达式，如果左边表达式的结果不为空就返回左边表达式的结果，否则就返回右边表达式的结果
+                例如 ：
+                    val c = if (a ! = null) {
+                        a
+                    } else {        ==》       val c = a ?: b
+                        b
+                    }
+            3）(!!) ：在对象的后面加上!!，告诉编译器此对象不为空
+                这是一种有风险的写法，意在告诉Kotlin，我非常确信这里的对象不会为空，所以不用你来帮我做空指针检查了，如果出现问
+              题，你可以直接抛出空指针异常，后果由我自己承担。
+
+            4）(let) ：这个函数提供了函数式API的编程接口，并将原始调用对象作为参数传递到Lambda表达式中
+                表达式 ：                               等效于 ：
+                    obj.let { obj2 ->                      if (a != null) {
+                        // 编写具体的业务逻辑
+                    }                                       }
+                示例 ：当Lambda表达式的参数列表中只有一个参数时，可以不用声明参数名，直接使用it关键字来代替
+                    study?.let { stu ->             study?.let {
+                        stu.readBooks()     ==》         it.readBooks()
+                        stu.doHomework()                 it.doHomework()
+                    }                               }
+            5）let函数是可以处理全局变量的判空问题的，而if判断语句则无法做到这一点
+
+八、Kotlin中的小魔术
+    1、字符串内嵌表达式
+        1】简介 ：字符串内嵌表达式是将字符串和变量连接在一起，不用想java使用+那么繁琐、
+            1）例如 ："hello, ${obj.name}. nice to meet you!"
+            2）当表达式中仅有一个变量的时候，还可以将两边的大括号省略
+                例 ："hello, $name. nice to meet you!"
+    2、函数的参数默认值
+        1】给函数的参数设定默认值，这样当我们没有传入参数时，就会采用默认值
+        2】例 ：
+            fun printParams(num: Int, str: String = "hello") {
+                println("num is $num , str is $str")
+            }
+        3】通过键值对给函数参数传值
+            printParams(str = "world", num = 123)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
