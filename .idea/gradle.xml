@@ -22,6 +22,8 @@
             <option value="$PROJECT_DIR$/litepal" />
             <option value="$PROJECT_DIR$/notification" />
             <option value="$PROJECT_DIR$/photoselect" />
+            <option value="$PROJECT_DIR$/playaudiotest" />
+            <option value="$PROJECT_DIR$/playvideotest" />
             <option value="$PROJECT_DIR$/runtimepermission" />
             <option value="$PROJECT_DIR$/sharedpreferencestest" />
             <option value="$PROJECT_DIR$/table" />

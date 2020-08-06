@@ -2126,8 +2126,48 @@ Android学习笔记
                       return   BitmapFactory.decodeFileDescriptor(r.getFileDescriptor());
                 }
 
-    3、播放多媒体 P374
+    3、播放多媒体(需要运行时权限)
+        1】播放音乐 ：MediaPlayer 类
+            1）常用的控制方法
+                方法名                             功能描述
+                setDataSource()             设置要播放的音频文件的文字
+                prepare()                   在开始播放之前调用，完成准备工作
+                start()                     开始或继续播放音频
+                pause()                     暂停播放音频
+                reset()                     将MediaPlayer重置到刚刚创建的状态
+                seekTo()                    从指定的位置开始播放音频
+                stop()                      停止播放音频，调用后MediaPlayer对象无法再次播放音频
+                release()                   释放与MediaPlayer对象相关的资源
+                isPlaying()                 判断当前MediaPlayer是否在播放音频
+                getDuration()               获取载入的音频文件的时长
+            2）MediaPlayer 工作流程
+                1-- 创建一个 MediaPlayer 对象
+                2-- 调用 setDataSource() 方法设置音频文件的路径
+                3-- 调用 prepare() 方法使 MediaPlayer 进入准备状态
+                4-- 调用 start() 方法开始播放音频
+                5-- 调用 pause() 方法暂停播放
+                6-- 调用 reset() 方法停止播放
+            3）我们可以在项目工程中创建一个 assets 目录，在这个目录中可以存放任意文件及子目录，他们会打包到打包文件中，
+            他和java、res 目录平级，需要创建在 module名/src/main 目录下
+            4）完成播放或者关闭时需要关闭资源
+        2】播放视频 ：VideoView 类
+            1）常用方法 ：
+                方法名                                 功能描述
+                setVideoPath()                  设置需要播放的视频文件的位置
+                start()                         开始或继续播放视频
+                pause()                         暂停播放视频
+                resume()                        将视频从头播放
+                seekTo()                        从指定位置开始播放视频
+                isPlaying()                     判断是否在播放视频
+                getDuration()                   获取载入的视频时长
+                getCurrentPosition()            获取当前进度，单位：ms
+            2）注意 ：
+                1-- VideoView 不支持直接播放 assets 目录下的视频资源
+                  解决方案 ：res 目录允许再创建一个 raw 目录，可以讲音视频放在此目录下，并且可以直接播放
+                2-- 注意路径名称的连接
+                Uri uri = Uri.parse("android.resource://com.example.playvideotest/"+R.raw.video);
 
+            3）完成播放或者关闭时需要关闭资源
 
 
 

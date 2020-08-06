@@ -1,3 +1,5 @@
+include ':playvideotest'
+include ':playaudiotest'
 include ':cameralum'
 rootProject.name='ActivityTest'
 include ':app'
