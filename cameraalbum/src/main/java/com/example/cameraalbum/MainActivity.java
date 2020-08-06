@@ -54,6 +54,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Button takePhoto = findViewById(R.id.take_photo);
+        // 选择照片部分
+        Button chooseFromAlbum = findViewById(R.id.choose_from_album);
+        chooseFromAlbum.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                
+            }
+        });
+
+
         picture = findViewById(R.id.picture);
 
         takePhoto.setOnClickListener(new View.OnClickListener() {

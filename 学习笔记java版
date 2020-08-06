@@ -1893,7 +1893,7 @@ Android学习笔记
                         .setStyle(new NotificationCompat.BigPictureStyle().bigPicture(BitmapFactory.decodeResources(getResources(), 图片路径（例R.drawable.xxx）)))
                         BitmapFactory.decodeResources(getResources(), 图片路径（例R.drawable.xxx）) 用于将图片解析为 Bitmap对象
 
-    2、调用摄像头和相册
+    2、调用摄像头和相册(最新的参考 cameralum)
         1】调用摄像头拍照
             1）请求相机功能
                 1-- 应用依赖于相机（没有相机将无法运行），在 AndroidManifest.xml 中添加声明
@@ -2108,8 +2108,25 @@ Android学习笔记
                     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
                     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
         2】在相册中选择图片
+            1）打开系统的文件选择器 ：
+                此处设置过滤器，只打开允许显示的图片文件
+                // 打开文件选择器
+                Intent intent = new  Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                // 指定只显示图片
+                intent.setType("image/*");
+                startActivityForResult(intent, fromAlbum);
+            2）调用getData()方法获取图片Uri
+                Bitmap bitmap = getBitmapFromUri(data.getData());
+                imageView.setImageBitmap(bitmap);  // 设置显示图片
+            3）将图片Uri转换成Bitmap显示图片
+                // 转换成Bitmap对象
+                private Bitmap getBitmapFromUri(Uri uri) throws FileNotFoundException {
+                    ParcelFileDescriptor r = getContentResolver().openFileDescriptor(uri, "r");
+                      return   BitmapFactory.decodeFileDescriptor(r.getFileDescriptor());
+                }
 
-
+    3、播放多媒体 P374
 
 
 
