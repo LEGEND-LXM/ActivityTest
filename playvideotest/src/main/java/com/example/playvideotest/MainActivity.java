@@ -9,13 +9,10 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 import android.widget.VideoView;
-
-import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -92,6 +89,6 @@ public class MainActivity extends AppCompatActivity {
         if (videoView != null) {
             videoView.suspend();  // 关闭
         }
-
     }
+
 }

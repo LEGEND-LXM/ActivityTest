@@ -1,3 +1,5 @@
+include ':servicetast'
+include ':androidthreadtest'
 include ':playvideotest'
 include ':playaudiotest'
 include ':cameralum'

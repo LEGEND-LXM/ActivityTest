@@ -10,6 +10,7 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/androidthreadtest" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/broadcast" />
             <option value="$PROJECT_DIR$/broadcast2" />
@@ -25,6 +26,7 @@
             <option value="$PROJECT_DIR$/playaudiotest" />
             <option value="$PROJECT_DIR$/playvideotest" />
             <option value="$PROJECT_DIR$/runtimepermission" />
+            <option value="$PROJECT_DIR$/servicetast" />
             <option value="$PROJECT_DIR$/sharedpreferencestest" />
             <option value="$PROJECT_DIR$/table" />
           </set>
