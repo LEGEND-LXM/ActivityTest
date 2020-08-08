@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
@@ -37,6 +38,16 @@ public class MainActivity extends AppCompatActivity {
         Button stopService = findViewById(R.id.stopServiceBtn);
         Button bindServiceBtn = findViewById(R.id.bindBtn);
         Button unbindServiceBtn = findViewById(R.id.unBindBtn);
+        final Button startIntentService = findViewById(R.id.startIntentService);
+
+        startIntentService.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d("MyIntentService", String.valueOf(Thread.currentThread().getId()));
+                Intent intent = new Intent(MainActivity.this, MyIntentService.class);
+                startService(intent);
+            }
+        });
 
         bindServiceBtn.setOnClickListener(new View.OnClickListener() {
             @Override

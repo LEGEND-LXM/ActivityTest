@@ -2311,11 +2311,123 @@ Android学习笔记
                         第三个参数 ：标志位，BIND_AUTO_CREATE表示绑定后自动创建服务，执行onCreate(),但不执行onStartCommand()方法
                 2-- 解除绑定 ：
                     unbindService(connection);  // 解绑服务
+            5）代码暂存（后续已被修改）
+                public class MyService extends Service {
 
+                private DownloadBinder mBinder = new DownloadBinder();
 
+                class DownloadBinder extends Binder {
 
+                    public void startDownload() {
+                        Log.d("MyService", "startDownload");
+                    }
 
+                    public int getProgress() {
+                        Log.d("MyService", "getProgress");
+                        return 0;
+                    }
+                }
 
+                public MyService() {
+                }
+
+                @Override
+                public IBinder onBind(Intent intent) {
+                    return mBinder;
+                }
+
+                @Override
+                public void onCreate() {
+                    super.onCreate();
+                    Log.d("MyService", "Create");
+                }
+
+                @Override
+                public int onStartCommand(Intent intent, int flags, int startId) {
+                    Log.d("MyService", "start");
+                    return super.onStartCommand(intent, flags, startId);
+                }
+
+                @Override
+                public void onDestroy() {
+                    super.onDestroy();
+                    Log.d("MyService", "Destroy");
+                }
+            }
+    4、Service 的生命周期
+        1】首次调用Context的startService()方法时，会调用onCreate()方法，然后回调onStartCommand()方法
+        2】后续每次调用Context的startService()方法都只会调用onStartCommand()方法
+        3】多次调用startService()方法只会有一个Service实例，只需要关闭一次即可
+        4】调用bindService()来获取一个Service的持久连接，此时会回调onBind()方法
+        5】调用方会获取onBind()返回的IBinder对象来进行通信
+        6】当调用stopService()时会回调Service的onDestroy()方法然后Service被销毁
+        7】解除绑定时调用unbindService()时也会调用onDestroy()方法
+        8】当Service被同时调用过startService()和bindService()后需要被销毁时，需要停止Service和解除绑定才能销毁
+    5、Service 的更多技巧
+        1】前台Service
+            1）简介 ：前台Service能够一直保持运行状态，它一直会有一个正在运行的图标显示在系统通知栏
+                @Override
+                public void onCreate() {
+                    super.onCreate();
+                    Log.d("MyService", "Create");
+                    NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        NotificationChannel channel = new NotificationChannel("my_service", "前台任务", NotificationManager.IMPORTANCE_DEFAULT);
+                        manager.createNotificationChannel(channel);
+                   }
+                    Intent intent = new Intent(this, MainActivity.class);
+                    PendingIntent pi = PendingIntent.getActivity(this, 0, intent, 0);
+                    Notification notification = new NotificationCompat.Builder(this, "my_service")
+                            .setContentTitle("content title")
+                            .setContentText("content text")
+                            .setSmallIcon(R.drawable.ic_launcher_background)
+                            .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_background))
+                            .setContentIntent(pi)
+                            .setProgress(100, 50, false)  // 显示进度条（第三个参数为动态会静态设置）
+                            .build();
+                    startForeground(1, notification);
+                }
+                解读 ：
+                    1-- 前台Service会显示在通知栏上，所以需要构建 Notification 对象设定相关属性，然后通过startForeground()方法显示，
+                    2-- startForeground() ：
+                            参数1 ：通知的ID
+                            参数2 ：Notification 对象
+            2）从Android 9.0系统开始，使用前台Service需要在注册文件中声明权限
+                <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+        2】使用 IntentService
+            1）简介 ：Service默认是在主线程中运行的，因此我们需要在Service的具体方法中开启子线程执行耗时操作
+            2）比较标准的Service形式 ：
+                public int onStartCommand(Intent intent, int flags, int startId) {
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                // 耗时操作
+                            }
+                        }).start();
+                        return super.onStartCommand(intent, flags, startId);
+                    }
+            3）为了简单的创建一个异步、会自动停止的Service，Android专门提供了 IntentService类
+                public class MyIntentService extends IntentService {
+                    public MyIntentService() {
+                        super("MyIntentService");  // 调用父类的构造函数
+                    }
+
+                    @Override
+                    protected void onHandleIntent(@Nullable Intent intent) {
+                        // 打印当前线程id
+                        Log.d("MyIntentService", String.valueOf(Thread.currentThread().getId()));
+                    }
+
+                    @Override
+                    public void onDestroy() {
+                        super.onDestroy();
+                        Log.d("MyIntentService", "Destroy");
+                    }
+                }
+                解读 ：
+                    1-- 需要在构造函数中调用父类构造方法
+                    2-- 在 onHandleIntent() 方法中执行耗时操作，他已经处于子线程中了
+                    3-- 结束时他会自动停止(运行完耗时逻辑就会停止，Service会被销毁)
 
 
 
