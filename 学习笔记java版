@@ -2429,16 +2429,53 @@ Android学习笔记
                     2-- 在 onHandleIntent() 方法中执行耗时操作，他已经处于子线程中了
                     3-- 结束时他会自动停止(运行完耗时逻辑就会停止，Service会被销毁)
 
-
-
-
-
-
-
-
-
-
-
+十、使用网络技术
+    1、WebView 的基础用法
+        1】简介 ：WebView 可以在应用中嵌入一个浏览器，使用它可以加载网页
+        2】简单用法 ：
+            1）在布局文件中添加 WebView 控件并设置id（可其他常规控件相同）
+            2）编辑相关属性 :
+                WebView webView = findViewById(R.id.webView);
+                webView.getSettings().setJavaScriptEnabled(true);
+                webView.setWebViewClient(new WebViewClient());
+                webView.loadUrl("https://www.baidu.com");
+                解读 ：
+                    1-- 通过 webView.getSettings() 方法可以设置浏览器的一些属性，此处 setJavaScriptEnabled(true) 表示支持javaScript脚本
+                    2-- webView.setWebViewClient(new WebViewClient())  ：当需要打开一个网页时，目标网页仍然在当前WebView中显示，而不是打开系统浏览器
+                    3-- webView.loadUrl("https://www.baidu.com") ：传入网址，打开指定网址
+            3）在注册完文件中加入权限声明 ：
+                <uses-permission android:name="android.permission.INTERNET"/>
+    2、使用HTTP访问网络(参考 networktest)
+        1】使用 HttpURLConnection
+            1）简单用法 ：
+                1-- 获取 HttpURLConnection 实例，创建一个URL对象，传入网络地址，最后调用openConnection()方法
+                        URL url = new URL("https://www.baidu.com");
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                2-- 获取实例后可以设置HTTP请求所使用的方法
+                    GET : 表示希望从服务器获取数据
+                    POST : 表示希望提交数据给服务器
+                    写法 ：connection.setRequestMethod("GET");
+                3-- 自由定制 ：例如设置连接超时、读取超时（单位ms）
+                    connection.setConnectTimeout(5000);  // 连接超时
+                    connection.setReadTimeout(5000);  // 读取超时
+                4-- 调用 getInputStream() 方法就可以获取服务器返回的输入流了，接下来就是对数据流的读取
+                    InputStream input = connection.getInputStream();
+                5-- 最后调用 disconnect() 方法关闭HTTP连接
+                    connection.disconnect();
+            2）案例 ：
+                新控件 ：ScrollView--实现滚动查看超出屏幕范围的内容
+                1-- 在点击事件中调用自定义方法 ：
+                    该方法作用是开启子线程发送HTTP请求，然后利用 BufferedReader 对服务器返回的流进行读取，然后将结果返回
+                  自定义的showResponse()方法中开启子线程更新UI（此处用runOnUiThread()更新UI）。
+                2-- 声明权限 ：
+                    <uses-permission android:name="android.permission.INTERNET"/>
+                3-- 如果需要提交数据 ：
+                    将请求方式改为 POST， 并在获取输入流之前写入数据即可，每条数据都要以键值对的形式存在，数据与数据之间用 “&”符号隔开
+                    例 ：
+                        connection.setRequestMethod("POST");
+                        DataOutputStream out = new DataOutputStream(connection.getOutputStream());
+                        out.writeBytes("username=admin&password=123456");
+        2】使用OkHttp
 
 
 

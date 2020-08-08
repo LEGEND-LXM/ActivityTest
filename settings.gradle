@@ -1,3 +1,5 @@
+include ':networktest'
+include ':webviewtest'
 include ':servicetast'
 include ':androidthreadtest'
 include ':playvideotest'
