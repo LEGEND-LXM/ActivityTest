@@ -2476,12 +2476,182 @@ Android学习笔记
                         DataOutputStream out = new DataOutputStream(connection.getOutputStream());
                         out.writeBytes("username=admin&password=123456");
         2】使用OkHttp
+            1）在构造文件中添加依赖库
+                implementation 'com.squareup.okhttp3:okhttp:4.1.1'
+            2）基础使用 ：
+              发起GET请求 ：
+                1-- 首先创建一个 OkHttpClient 的实例 : OkHttpClient client = new OkHttpClient();
+                2-- 发起HTTP请求前需要创建一个Request对象 ：Request request = new Request.Builder().build();
+                3-- 上述Request对象为空对象，我们可以在build()方法调用前使用其他方法来丰富它
+                        Request request = new Request.Builder()
+                                    .url("https://www.baidu.com")  // 绑定网址
+                                    .build();
+                4-- 调用OkHttpClient的newCall()方法来创建一个Call对象并调用它的execute()方法发送请求并获取服务器返回的数据
+                        Response response = client.newCall(request).execute();
+                5-- 获取返回的具体内容 ：String responseData = response.body().toString();
+              发起POST请求 ：
+                第2、3步有差异，如下 ：
+                2-- 创建一个RequestBody对象来存储数据，数据以键值对方式储存 ：
+                        RequestBody requestBody = new FormBody.Builder()
+                                        .add("username", "admin")
+                                        .add("password", "123456")
+                                        .build();
+                3-- 构建Request对象时调用post()方法，并传入RequestBody对象 ：
+                        Request request = new Request.Builder()
+                                        .url("https://www.baidu.com")
+                                        .post(requestBody)
+                                        .build();
+    3、解析XML格式数据
+        前言 ：每个访问网络的应用程序都有一个自己的服务器，我们可以向服务器提交数据，也可以从服务器获取数据。
+                网络上传输的数据一般都是经过格式化的，这种数据有一定的结构规格语义，当一方接收到后可以按照相同的
+                结构规格进行解析从而提取出信息。
+        1】搭建一个简单的web服务器提供一段XML文本，然后我们去访问他进行解析
+            1）在这里选择 Apache 服务器，安装教程报百度即可
+            3）进入安装位置的 htdocs 目录下，新建get_data.xml文件，加入如下XML格式内容
+                <apps>
+                	<app>
+                		<id>1</id>
+                		<name>Google Maps</name>
+                		<version>1.0</version>
+                	</app>
+                	<app>
+                		<id>2</id>
+                		<name>Chrome</name>
+                		<version>2.1</version>
+                	</app>
+                	<app>
+                		<id>3</id>
+                		<name>Google Play</name>
+                		<version>2.3</version>
+                	</app>
+                </apps>
+        2】Pull解析方式
+            private void parseXMLWithPull(String xmlData) {
+                try {
+                    // 获取XmlPullParserFactory实例
+                    XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+                    // 获取XmlPullParser对象
+                    XmlPullParser xmlPullParser = factory.newPullParser();
+                    // 将获取的 XML数据设置进去
+                    xmlPullParser.setInput(new StringReader(xmlData));
+                    // 得到当前解析的事件getEventType()
+                    int eventType = xmlPullParser.getEventType();
+                    String id = "";
+                    String name = "";
+                    String version = "";
+                    while (eventType != xmlPullParser.END_DOCUMENT) {  // 判断解析工作是否完成
+                        String nodeName = xmlPullParser.getName();  // 获取当前节点的名字
+                        switch (eventType) {
+                            // 开始解析某个节点
+                            case XmlPullParser.START_TAG :
+                                if ("id".equals(nodeName)) {
+                                    id = xmlPullParser.nextText();  // 获取节点的具体内容
+                                } else if ("name".equals(nodeName)) {
+                                    name = xmlPullParser.nextText();
+                                } else if ("version".equals(nodeName)) {
+                                    version = xmlPullParser.nextText();
+                                }
+                                break;
+                            // 完成解析某个点
+                            case XmlPullParser.END_TAG:
+                                if ("app".equals(nodeName)) {
+                                    Log.d("MainActivity","id:"+id);
+                                    Log.d("MainActivity","name:"+name);
+                                    Log.d("MainActivity","version:"+version);
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                        eventType = xmlPullParser.next();  // 获取下一个解析事件
+                    }
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        3】SAX解析方式
+            1）简介 ：SAX解析的用法比Pull复杂，但是语义更加清楚
+            2）新建一个类继承DefaultHandler，重写父类的相关方法
+                public class MyHandler extends DefaultHandler{
+                    @Override
+                    public void startDocument() throws SAXException {
+                        super.startDocument();
+                    }
 
+                    @Override
+                    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+                        super.startElement(uri, localName, qName, attributes);
+                    }
 
+                    @Override
+                    public void characters(char[] ch, int start, int length) throws SAXException {
+                        super.characters(ch, start, length);
+                    }
 
+                    @Override
+                    public void endElement(String uri, String localName, String qName) throws SAXException {
+                        super.endElement(uri, localName, qName);
+                    }
 
+                    @Override
+                    public void endDocument() throws SAXException {
+                        super.endDocument();
+                    }
+                }
+            3）方法解读 ：
+                1-- startDocument() : 此方法在开始解析XML的时候调用
+                2-- startElement() ：此方法开始解析某个节点时调用
+                3-- characters() ：此方法会在获取节点中的内容时调用
+                    获取节点内容时，此方法会被多次调用，一些换行符也被当作内容解析出来
+                4-- endElement() ：此方法完成节点解析后调用
+                5-- endDocument() ：此方法在完成整个XML解析后调用
+            4）具体方法的代码查看java类（MyHandler.java）,下列是完整的解析流程 ：
+                SAXParserFactory factory = SAXParserFactory.newInstance();
+                XMLReader xmlReader = factory.newSAXParser().getXMLReader();
+                使用此类 ：
+                1-- 创建类的实例
+                    MyHandler handler = new MyHandler();
+                2-- 将上述实例设置到XMLReader中去
+                    xmlReader。setContentHandler(handler);
+                3-- 开始解析
+                    xmlReader.parse(new InputSource(new StringBuilder(xmlData)));
+    4、解析JSON数据
+        1】简介 ：JSON体积小，网络传输更省流量。但是语义性较差，看起来不如XML直观
+        2】使用JSONObject解析
+            private void pareseJSONWithJSONObject(String jsonData) throws JSONException {
+                    JSONArray jsonArray = new JSONArray(jsonData);
+                    for (int i = 0; i<jsonArray.length(); i++) {
+                        JSONObject jsonObject = jsonArray.getJSONObject(i);
+                        String id = jsonObject.getString("id");
+                        String name = jsonObject.getString("name");
+                        String version = jsonObject.getString("version");
+                        Log.d("MainActivity", "id"+id);
+                        Log.d("MainActivity", "name"+name);
+                        Log.d("MainActivity", "version"+version);
 
-
+                    }
+                }
+        3】使用GSON解析
+            1）添加依赖 ：implementation 'com.google.code.gson:gson:2.8.5'
+            2）简介 ：GSON可以将一段JSON字符的字符串自动映射成一个对象
+                1-- 例 ：解析JSON字段 {"name":"Tom","age":"20"}
+                    我们可以定义一个Person类然后加入name和age字段，然后调用一下代码即可 ：
+                        Gson gson = new Gson();
+                        Person person = gson.fromJson(jsonData, Person.class);
+                2-- 解析JSON数组 ：
+                    需要借助TypeToken将期望解析成的数据类型传入fromJson()方法中，例 ：
+                        List<Preson> Person = gson.fromJson(jsonData, new TypeToken<List<Person>>(){}.getType());
+                    案例 ：解析JSON数组
+                        [{"id":"5",""version":"5.5","name":"Clash of clans"},
+                        {"id":"6",""version":"7.0","name":"Boom Beach"},
+                        {"id":"7",""version":"3.5","name":"Clash Royale"}]
+                        1- 创建一个App类，添加id、name、version字段，并加入对应get、set方法
+                        2- 解析部分 ：
+                            Gson gson = new Gson();
+                            List<App> appList = gson.fromJson(jsonData, new TypeToken<List<App>>(){}.getType());
+                            for (App app : appList) {
+                                // 此时以获取对象可进行对应操作
+                            }
 
 
 
