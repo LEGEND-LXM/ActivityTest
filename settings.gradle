@@ -1,3 +1,4 @@
+include ':bluetoothtest'
 include ':networktest'
 include ':webviewtest'
 include ':servicetast'

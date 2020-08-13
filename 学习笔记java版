@@ -2653,10 +2653,80 @@ Android学习笔记
                                 // 此时以获取对象可进行对应操作
                             }
 
-
-
-
-
+十一、使用蓝牙、NFC和WI-FI点对点进行通信
+    1、使用蓝牙传输数据
+        1】简介 ：使用蓝牙API，可以搜索、连接指定范围内的其他蓝牙设备。使用Bluetooth Socket可以初始化一条通信链路，可以在
+                设备间传输数据。本教程只支持加密通信，只能在已配对的设备间进行连接。
+        2】管理本地蓝牙适配器
+            1）简介 ：本地蓝牙适配器通过 BluetoothAdapter 类控制
+            2）访问默认的蓝牙适配器 ：getDefaultAdapter() 方法
+                例 ：BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+            3）关于权限 ：
+                1-- 读取本地蓝牙适配器的属性、启动发现或查找绑定的设备
+                    <uses-permission android:name="android.permission.BLUETOOTH"/>
+                2-- 蓝牙扫描可以获取用户的位置信息
+                    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+                3-- 需要在运行时申请位置权限
+                    if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                            != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}
+                                , PERMISSION_LOCATION);
+                    }
+                4-- 如果需要修改蓝牙的相关属性
+                    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+            4）相关方法
+                1-- 判断设备是否启用 ：isEnabled()
+                2-- 获取设备名称和硬件地址 ：getName()、getAddress()
+                3-- 设置设备名称：setName()   需要 BLUETOOTH_ADMIN 权限
+                4-- 获取当前蓝牙适配器状态 ：getState(),返回的常量 ：
+                    STATE_TURNING_ON  STATE_TURNING_OFF  STATE_ON  STATE_OFF
+                5-- 开启蓝牙 ：将 F 静态常量用作startActivityForResult动作来请求用户开启蓝牙
+                    startActivityForResult(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), 1);
+        3】可被发现和远程设备发现
+            1）简介 ：两台设备彼此查找并连接的过程称为发现。在建立Bluetooth Socket通信之前，本地的蓝牙适配器必须和远程设备绑定。
+                    在两台设备绑定并连接之前，他们必须发现彼此。
+            2）使设备可被发现
+                1-- 可被发现性由扫描模式显示，调用 BluetoothAdapter 的 setScanMode()方法来获取
+                    返回的参数 ：
+                        1- SCAN_MODE_CONNECTABLE_DISCOVERABLE : 查询扫描和页面扫描都开启。设备能被任何一台设备扫描到。
+                        2- SCAN_MODE_CONNECTABLE : 页面扫描已启用，但查询扫描未启用。设备可以被已配对过的设备扫描到。
+                        3- SCAN_MODE_NONE : 可被发现性关闭，所有设备都不能发现
+                    Android默认关闭可发现性，需要使用 ACTION_REQUEST_DISCOVERABLE 动作打开一个新的Activity来获取权限
+                        private void enable_discoverable() {  // 开启可被发现性
+                                Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+                                startActivityForResult(intent, DISCOVERY_REQUEST);
+                            }
+                    可被发现性回调函数（部分）
+                        case DISCOVERY_REQUEST :  // 请求可被发现回调
+                            if (resultCode != RESULT_CANCELED) {
+                                // 可被发现性已打开
+                                Toast.makeText(this, "可被发现"+resultCode, Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(this, "不可被发现", Toast.LENGTH_SHORT).show();
+                            }
+                        resultCode ：表示可被发现性持续时长，单位:秒(s)
+                        RESULT_CANCELED ：表示拒绝开启可被发现模式
+            3）发现远程设备
+                1-- 如果要去发现一台新设备，那么需要本地蓝牙适配器启动发现扫描
+                2-- 如果需要使用蓝牙的相关信息确定位置信息，必须在运行时中申请 ACCESS_COARSE_LOCATION 权限
+                3-- 使用isDiscovering() 方法判断是否在进行发现扫描
+                4-- 开启发现扫描 ：调用 BluetoothAdapter 对象的 startDiscovery() 方法
+                    发现过程是异步的，Android会在发现过程开始和结束时将Intent广播出去，同时也会将扫描到的远程设备告知你
+                5-- 创建广播接收器来监听 ACTION_DISCOVERY_STARTED 和 ACTION_DISCOVERY_FINISHED 广播Intent
+                6-- 发现的蓝牙设备会通过发送 ACTION_FOUND 广播Intent来返回
+                7-- 每个发现的蓝牙设备返回的广播 Intent 包含设备名称，存放在Extra信息的BluetoothDevice.EXTRA_NAME字段中
+                        获取 ：String remoteDeviceName = intent.getStringExtra(BluetoothDevice.EXTRA_NAME);
+                    还包含代表着设备不可变得Parcelable对象，存放在Extra信息的BluetoothDevice.EXTRA_DEVICE字段中
+                        获取 ：BluetoothDevice remoteBevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+            4）蓝牙通信
+                1-- 两台设备必须先配对才能通信
+                2-- 建立通信信道进行双向通信的两个类 ：
+                    BluetoothServerSocket ：监听连接
+                        用来监听套接字，初始化设备间的链路。其中一台设备将作为服务器监听和接收进入的请求连接，以建立握手。
+                    BluetoothSocket ：初始化新的信道和处理信道
+                        用来创建新的客户端，连接正在监听的服务器，在建立连接后被服务器返回。一旦建立连接，服务器和客户端都将使用
+                      BluetoothSocket来传输数据流。
+                  客户端和服务器只影响建立连接，建立之后的数据传递是完全一致的。
 
 
 
