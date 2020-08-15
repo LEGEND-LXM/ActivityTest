@@ -13,6 +13,8 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanResult;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
@@ -41,6 +43,17 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_LOCATION = 1;  // 位置权限运行时申请请求码
 
 
+    // 扫描BLE设备
+    private void BLEScan() {
+        bluetoothAdapter.getBluetoothLeScanner().startScan(new ScanCallback() {
+            @Override
+            public void onScanResult(int callbackType, ScanResult result) {
+                super.onScanResult(callbackType, result);
+
+                BluetoothDevice device = result.getDevice();  // 获取设备对象
+            }
+        });
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

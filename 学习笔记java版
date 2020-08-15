@@ -2839,6 +2839,26 @@ Android学习笔记
                             参数1 ：对应的配置文件参数，例如 ：BluetoothProfile.HEADSET
                             参数2 ：提供的用于和远程设备交互的代理对象
         5】低功耗蓝牙
+            1）简介 ：低功耗蓝牙传输数据的数据量更小，消耗的能量更少，适合物联网设备。它的连接基于查找外设和广播自身外设。
+            2）外设需要中央设备才能互相通信
+            3）关于通信 ：
+                1-- 使用 Bluetooth Adapter 进行传统蓝牙通信
+                2-- 搜索外设时 ：
+                    使用 Bluetooth Adapter 的 getBluetoothLeScanner() 方法接收一个 BluetoothLeScanner 对象，然后调用
+                  startScan() 方法开始扫描BLE设备，同时传入一个 ScanCallback 实现
+                    例 ：
+                        private void BLEScan() {
+                            bluetoothAdapter.getBluetoothLeScanner().startScan(new ScanCallback() {
+                                @Override
+                                public void onScanResult(int callbackType, ScanResult result) {
+                                    super.onScanResult(callbackType, result);
+
+                                    BluetoothDevice device = result.getDevice();  // 获取设备对象
+                                }
+                            });
+                        }
+                    解读 :
+                        onScanResult 方法接收一个 ScanResult 对象，可以通过它获取 BluetoothDevice 对象，实现与远程BLE的交互
 
 
 
