@@ -10,6 +10,9 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothServerSocket;
+import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
@@ -19,16 +22,25 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Set;
+import java.util.UUID;
+
 public class MainActivity extends AppCompatActivity {
 
     private MyBroadcastReceiver broadcastReceiver;  // 定义广播接收器
-    private LocalBroadcastManager localBroadcastManager;
+    private LocalBroadcastManager localBroadcastManager;  // 本地广播管理器
 
     private BluetoothAdapter bluetoothAdapter=BluetoothAdapter.getDefaultAdapter();  // 定义蓝牙适配器
+    private BluetoothSocket bluetoothSocket;  // 建立连接的Bluetooth Socket
     private static final int ENABLE_BLUETOOTH = 1;  // 开启蓝牙请求码
     private static final int DISCOVERY_REQUEST = 2;  // 开启可被发现性请求码
 
     private static final int PERMISSION_LOCATION = 1;  // 位置权限运行时申请请求码
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -131,6 +143,51 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(this, "You denied the permission", Toast.LENGTH_SHORT).show();
                 }
         }
+    }
+
+    // 监听蓝牙连接
+    private UUID startServiceSocket() {
+        String name = "bluetoothService";
+        UUID uuid = UUID.randomUUID();
+        try {
+            final BluetoothServerSocket bluetoothServerSocket = bluetoothAdapter.listenUsingRfcommWithServiceRecord(name, uuid);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        // 监听连接
+                        bluetoothSocket = bluetoothServerSocket.accept();
+                        Set<BluetoothDevice> bluetoothDevices = bluetoothAdapter.getBondedDevices();
+                        // 开始监听信息
+                        listenForMessages();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return uuid;
+    }
+
+    // 连接远程设备
+    private void connectToServiceSocket(BluetoothDevice device, UUID uuid) {
+        try {
+            // 获取BluetoothSocket对象
+            BluetoothSocket clientSocket = device.createRfcommSocketToServiceRecord(uuid);
+            // 开始尝试连接
+            clientSocket.connect();
+            // 开始接收信息
+            listenForMessages();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 接收信息
+    private void listenForMessages() {
+        // 接收消息逻辑
     }
 
     // 开启广播接收器，处理发现信息

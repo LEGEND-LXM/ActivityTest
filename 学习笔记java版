@@ -2718,7 +2718,8 @@ Android学习笔记
                         获取 ：String remoteDeviceName = intent.getStringExtra(BluetoothDevice.EXTRA_NAME);
                     还包含代表着设备不可变得Parcelable对象，存放在Extra信息的BluetoothDevice.EXTRA_DEVICE字段中
                         获取 ：BluetoothDevice remoteBevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-            4）蓝牙通信
+        4】蓝牙通信
+            1）简介 ：
                 1-- 两台设备必须先配对才能通信
                 2-- 建立通信信道进行双向通信的两个类 ：
                     BluetoothServerSocket ：监听连接
@@ -2727,8 +2728,117 @@ Android学习笔记
                         用来创建新的客户端，连接正在监听的服务器，在建立连接后被服务器返回。一旦建立连接，服务器和客户端都将使用
                       BluetoothSocket来传输数据流。
                   客户端和服务器只影响建立连接，建立之后的数据传递是完全一致的。
+            2）打开 Bluetooth Service Socket 监听器
+                1-- 简介 ：Bluetooth Service Socket 用于监听连接请求，此时设备扮演服务器的角色
+                2-- 设置设备为服务器 ：调用 listenUsingRfcommWithServiceRecord() 方法来监听连接请求，可以传入名称（用于标识服务器）和
+                  通用唯一识别码。（UUID）注意 ：UUID随机生成不能自己设定
+                    String name = "My Device";
+                    UUID uuid = UUID.randomUUID();
+                    BluetoothServerSocket bluetoothServerSocket = bluetoothAdapter.listenUsingRfcommWithServiceRecord(name, uuid);
+                3-- 客户端需要知道服务器的UUID才能连接
+                4-- 设置好监听器后调用accept方法会开始监听。调用时可以传入超时时间，服务器会阻塞，知道有尝试建立连接，客户端必须拥有相匹配的UUID
+                5-- 当连接请求来自一台没有配对的远程设备，那么需要配对后才能返回accept调用
+                6-- 连接成功后会返回一个连接设备的Bluetooth Socket，可以用来传输数据
+                注意 ：监听为阻塞操作，需要放在子线程中使用
+                7-- 设备必须是可被发现的。使用 ACTION_REQUEST_DISCOVERABLE 广播请求使设备变为可被发现的，然后开始监听连接请求
+                例 ：
+                    private BluetoothAdapter bluetoothAdapter=BluetoothAdapter.getDefaultAdapter();  // 定义蓝牙适配器
+                    private BluetoothSocket bluetoothSocket;  // 建立连接的Bluetooth Socket
 
+                    // 监听蓝牙连接
+                    private UUID startServiceSocket() {
+                        String name = "bluetoothService";
+                        UUID uuid = UUID.randomUUID();
+                        try {
+                            final BluetoothServerSocket bluetoothServerSocket = bluetoothAdapter.listenUsingRfcommWithServiceRecord(name, uuid);
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        // 监听连接
+                                        bluetoothSocket = bluetoothServerSocket.accept();
+                                        // 开始监听信息
+                                        listenForMessages();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }).start();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        return uuid;
+                    }
 
+                    // 接收信息
+                    private void listenForMessages() {
+                        // 接收消息逻辑
+                    }
+            2）选择远程蓝牙设备进行通信
+                1-- 创建客户端Bluetooth Socket对象，需要先获取远程设备服务器的 BluetoothDevice 对象
+                2-- 可以创建的前提条件 ：
+                    1- 远程设备可以被发现
+                    2- 远程设备正在监听连接
+                    3- 本地设备与远程设备必须先完成配对
+                3-- BluetoothDevice对象是远程设备的代理，通过他们可以查找远程设备的属性以及初始化Bluetooth Socket连接
+                4-- 获取 BluetoothDevice 对象的方法 ：
+                    1- 进行设备扫描时接收到的广播Intent含有此对象信息bluetoothAdapter
+                    2- 本地设备通过远程设备的蓝牙地址查询 ：BluetoothDevice device = bluetoothAdapter.getRemoteDevice("01:23:97:35:2F:AA");
+                    3- 获取已配对设备，调用getBondedDevices()方法来获取，返回的是一个Set集合
+                        Set<BluetoothDevice> bluetoothDevices = bluetoothAdapter.getBondedDevices();
+            3）开启客户端 Bluetooth Socket 连接
+                1-- 使用远程设备初始化通信信道，需要调用远程设备(BluetoothDevice对象)的createRfcommSocketToServiceRecord()方法创建Bluetooth Socket，
+                  同时传入对应已经开启的Bluetooth Service Socket监听器和UUID
+                2-- 然后调用创建的Bluetooth Socket对象的connect()方法来连接(此操作也是阻塞操作，需要在子线程中完成)
+                    // 连接远程设备
+                    private void connectToServiceSocket(BluetoothDevice device, UUID uuid) {
+                        try {
+                            // 获取BluetoothSocket对象
+                            BluetoothSocket clientSocket = device.createRfcommSocketToServiceRecord(uuid);
+                            // 开始尝试连接
+                            clientSocket.connect();
+                            // 开始接收信息
+                            listenForMessages();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+            4）使用 Bluetooth Socket 传输数据
+                1-- 建立连接后就可以Bluetooth Socket来传输数据
+                2-- 数据的传输通过 InputStream 和 OutputStream 对象来完成的
+                    1- 这两个对象获取 ：通过 grtInputStream() 和 getOutputStream() 方法获取
+                    2- 发送信息 ：通过OutputStream对象的write()方法，参数为byte类型 (类似于单片机中的char数据)取值范围-128~127，
+                                可以通过getByte()方法来将内容装换为Byte类型
+                    3- 接受信息 ：通过 InputStream 对象的 read() 方法来读取
+            5）蓝牙的配置文件
+                上述通用办法之外，蓝牙规范提供了一个用于在特定类型和目的设备间通信的专用接口 ：
+                    1-- 耳机 ：BluetoothHeadset 类用于宿主设备与蓝牙耳机之间的通信
+                    2-- A2DP（高级音频分发设备） ：BluetoothA2DP类
+                    3-- 健康设备 ：相关配置文件
+                1-- 使用方式 ：
+                    1- 调用 BluetoothAdapter 实例的 getProfileProxy() 方法调用相关配置文件（使用相关配置文件）
+                        getProfileProxy()方法参数 ：
+                            参数1 ：上下文对象
+                            参数2 ：BluetoothProfile.ServiceListener 的一个实现
+                            参数3 ：对应的配置文件参数，例如 ：BluetoothProfile.HEADSET
+                    2- 对应的远程连接建立连接时，Service Listener 的 onServiceConnected()方法会被调用，会提供用于和远程设备交互的代理对象
+                        例 ：（BluetoothProfile.ServiceListener 的实现）
+                            private BluetoothProfile.ServiceListener listener = new BluetoothProfile.ServiceListener() {
+                                @Override
+                                public void onServiceConnected(int profile, BluetoothProfile proxy) {
+                                    // 连接后的回调函数，需要对proxy进行强制类型转换后在使用
+                                }
+
+                                @Override
+                                public void onServiceDisconnected(int profile) {
+                                    // 断开连接时调用
+                                }
+                            };
+                    3- 使用完毕后需要关闭配置文件 ：调用 BluetoothAdapter 实例的 closeProfileProxy() 方法
+                         closeProfileProxy()参数 ：
+                            参数1 ：对应的配置文件参数，例如 ：BluetoothProfile.HEADSET
+                            参数2 ：提供的用于和远程设备交互的代理对象
+        5】低功耗蓝牙
 
 
 
