@@ -2860,25 +2860,415 @@ Android学习笔记
                     解读 :
                         onScanResult 方法接收一个 ScanResult 对象，可以通过它获取 BluetoothDevice 对象，实现与远程BLE的交互
 
+十二、WIFI学习
+    1、WLAN扫描
+        1】WLAN 扫描流程
+            1）注册 SCAN_RESULTS_AVAILABLE_ACTION 广播监听器，系统在完成扫描请求时调用此监听器，应用可以使用广播被动监听设备上所有扫描的完成情况
+            2）调用 WifiManager.startScan() 方法请求扫描，需要判定方法的返回状态，下列情况可能导致失败 ：
+                1-- 短时间扫描过多，扫描请求可能遭到节流
+                2-- 设备处于空闲状态，扫描已停用
+                3-- WLAN 硬件报告扫描失败
+            3）调用 WifiManager.getScanResults() 方法获取扫描结果，返回结果为最近更新的结果，如果扫描未完成或，可能返回上一次扫描的结果，
+              所以需要在收到第一条中的广播后再获取结果。
+        2】关于权限及版本
+            1）Android 8.0 和 Android 8.1
+                调用 WifiManager.getScanResults() 需要下列任意一项权限 ：
+                    ACCESS_FINE_LOCATION
+                    ACCESS_COARSE_LOCATION
+                    CHANGE_WIFI_STATE
+                如果应用不具备上述权限，调用将会失败，并显示 ：SecurityException。
+                【*】在搭载 Android 8.0（API 级别 26）及更高版本的设备上，您可以使用 CompanionDeviceManager 代表应用对附近的配套设备执行扫描，而不需要位置权限。
+            2）Android 9
+                调用 WifiManager.startScan() 需要满足以下所有条件：
+                    1-- 应用拥有 ACCESS_FINE_LOCATION 或 ACCESS_COARSE_LOCATION 权限。
+                    2-- 应用拥有 CHANGE_WIFI_STATE 权限。
+                    3-- 设备已启用位置信息服务
+            3）Android 10（API 级别 29）及更高版本
+                成功调用 WifiManager.startScan() 需要满足以下所有条件：
+                    1-- 如果应用以 Android 10（API 级别 29）SDK 或更高版本为目标平台，需要拥有 ACCESS_FINE_LOCATION 权限
+                    2-- 如果应用以低于 Android 10（API 级别 29）的 SDK 为目标平台，需要拥有 ACCESS_COARSE_LOCATION 或 ACCESS_FINE_LOCATION 权限
+                    3-- 应用拥有 CHANGE_WIFI_STATE 权限
+                    4-- 设备已启用位置信息服务
+                成功调用 WifiManager.getScanResults() 需要满足以下所有条件：
+                    1-- 应用以 Android 10（API 级别 29）SDK 或更高版本为目标平台，应用需要拥有 ACCESS_FINE_LOCATION 权限
+                    2-- 应用以低于 Android 10（API 级别 29）的 SDK 为目标平台，应用需要拥有 ACCESS_COARSE_LOCATION 或 ACCESS_FINE_LOCATION 权限
+                    3-- 应用拥有 ACCESS_WIFI_STATE 权限
+                    4-- 设备已启用位置信息服务
+                调用应用无法满足上述所有要求，调用将失败，并显示:SecurityException
+        3】节流 ：扫描频率限制
+            1）Android 8.0 和 Android 8.1
+                每个后台应用可以在 30 分钟内扫描一次
+            2）Android 9
+                每个前台应用可以在 2 分钟内扫描四次。这样便可在短时间内进行多次扫描。
+                所有后台应用总共可以在 30 分钟内扫描一次。
+            3）Android 10 及更高版本
+                适用 Android 9 的节流限制。新增一个开发者选项，用户可以关闭节流功能以便进行本地测试（位于开发者选项 > 网络 > WLAN 扫描调节下）。
+        4】示例代码 ：
+            // 获取WifiManager对象
+            WifiManager wifiManager = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
+            // 初始化广播接收器
+            BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
+              @Override
+              public void onReceive(Context c, Intent intent) {
+                boolean success = intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false);
+                if (success) {
+                  scanSuccess();
+                } else {
+                  // scan failure handling
+                  scanFailure();
+                }
+              }
+            };
 
+            IntentFilter intentFilter = new IntentFilter();
+            // 添加监听动作
+            intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+            // 注册广播监听器
+            context.registerReceiver(wifiScanReceiver, intentFilter);
+            // 获取扫描状态
+            boolean success = wifiManager.startScan();
+            if (!success) {
+              // scan failure handling
+              scanFailure();
+            }
 
+            ....
 
+            private void scanSuccess() {
+              // 获取扫描信息
+              List<ScanResult> results = wifiManager.getScanResults();
+              ... use new scan results ...
+            }
 
+            private void scanFailure() {
+              // handle failure: new scan did NOT succeed
+              // consider using old scan results: these are the OLD results!
+              List<ScanResult> results = wifiManager.getScanResults();
+              ... potentially use older scan results ...
+            }
+    2、WLAN 直连（对等连接或 P2P）
+        1】简介 ：使用 WLAN 直连 (P2P) 技术，可以让具备相应硬件的 Android 4.0（API 级别 14）或更高版本设备在没有中间接入点的情况下，
+            通过 WLAN 进行直接互联。使用这些 API，您可以实现支持 WLAN P2P 的设备间相互发现和连接，从而获得比蓝牙连接更远距离的高速连接通
+            信效果。对于多人游戏或照片共享等需要在用户之间共享数据的应用而言，这一技术非常有用。
+        2】主要内容 ：
+            1）支持发现、请求，以及连接到对等设备的方法（在 WifiP2pManager 类中定义）。
+            2）支持获知 WifiP2pManager 方法调用成功与否的侦听器。调用 WifiP2pManager 方法时，每个方法均可收到作为参数传入的特定侦听器。
+            3）通知 WLAN P2P 框架检测到的特定事件（例如连接断开或新发现对等设备）的 Intent
+        3】API概述 ：
+            WifiP2pManager 类提供的方法使您可以在设备上与 WLAN 硬件交互，以执行发现和连接对等设备等操作。
+            1） WLAN P2P 方法
+                    方法                                  说明
+                initialize()	        通过 WLAN 框架注册应用。必须先调用此方法，然后再调用任何其他 WLAN P2P 方法。
+                connect()	            启动与具有指定配置的设备的对等连接。
+                cancelConnect()	        取消任何正在进行的对等群组协商。
+                requestConnectInfo()	请求设备连接信息。
+                createGroup()	        以群组所有者的身份，使用当前设备创建对等群组。
+                removeGroup()	        移除当前对等群组。
+                requestGroupInfo()	    请求对等群组信息。
+                discoverPeers()	        启动对等设备发现
+                requestPeers()	        请求已发现对等设备的当前列表。
+            WifiP2pManager 方法使您可以在侦听器中进行传递，以便 WLAN P2P 框架可以向您的 Activity 通知通话状态。
+            2） WLAN P2P 侦听器
+                        侦听器接口	                            相关操作
+                WifiP2pManager.ActionListener	        connect()、cancelConnect()、createGroup()、removeGroup() 和 discoverPeers()
+                WifiP2pManager.ChannelListener	        initialize()
+                WifiP2pManager.ConnectionInfoListener	requestConnectInfo()
+                WifiP2pManager.GroupInfoListener	    requestGroupInfo()
+                WifiP2pManager.PeerListListener	        requestPeers()
+            3）WLAN P2P Intent
+            WLAN P2P API 定义当发生特定 WLAN P2P 事件时会广播的 Intent
+                            Intent	                                说明
+                WIFI_P2P_CONNECTION_CHANGED_ACTION	    当设备的 WLAN 连接状态更改时广播。
+                WIFI_P2P_PEERS_CHANGED_ACTION	        当调用 discoverPeers() 时广播。如果在应用中处理此 Intent，则通常需要调用 requestPeers() 以获取对等设备的更新列表。
+                WIFI_P2P_STATE_CHANGED_ACTION	        当 WLAN P2P 在设备上启用或停用时广播。
+                WIFI_P2P_THIS_DEVICE_CHANGED_ACTION	    当设备的详细信息（例如设备名称）更改时广播。
+        4】为 WLAN P2P Intent 创建广播接收器
+            1）创建扩展 BroadcastReceiver 类的类。对于类的构造函数，您很可能希望具备 WifiP2pManager、WifiP2pManager.Channel，以及此广播接收器将在其中注册的 Activity 的参数。
+              这使广播接收器可以向 Activity 发送更新，访问 WLAN 硬件并获得通信通道（如果需要）。
+            2）在广播接收器中，查看您感兴趣的 Intent onReceive()。根据接收到的 Intent，执行任何必要操作。例如，如果广播接收器接收到 WIFI_P2P_PEERS_CHANGED_ACTION Intent，则您
+              可以调用 requestPeers() 方法，以获得当前所发现对等设备的列表。
+        5】示例代码 :
+            /**
+             * A BroadcastReceiver that notifies of important Wi-Fi p2p events.
+             */
+            public class WiFiDirectBroadcastReceiver extends BroadcastReceiver {
 
+                private WifiP2pManager mManager;
+                private Channel mChannel;
+                private MyWiFiActivity mActivity;
+                // 构造方法
+                public WiFiDirectBroadcastReceiver(WifiP2pManager manager, Channel channel,
+                        MyWifiActivity activity) {
+                    super();
+                    this.mManager = manager;
+                    this.mChannel = channel;
+                    this.mActivity = activity;
+                }
 
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+                    // 判断接收到的广播动作（建议用switch语句）
+                    if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
+                        // Check to see if Wi-Fi is enabled and notify appropriate activity
+                    } else if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
+                        // Call WifiP2pManager.requestPeers() to get a list of current peers
+                    } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
+                        // Respond to new connection or disconnections
+                    } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
+                        // Respond to this device's wifi state changing
+                    }
+                }
+            }
+        6】相关方法调用
+            通过 Android Q，以下广播 Intent 已从粘性变为非粘性：
+            1）WIFI_P2P_CONNECTION_CHANGED_ACTION
+                应用可使用 requestConnectionInfo()、requestNetworkInfo() 或 requestGroupInfo() 来检索当前连接信息。
+            2）WIFI_P2P_THIS_DEVICE_CHANGED_ACTION
+                应用可使用 requestDeviceInfo() 来检索当前连接信息。
 
+        7】创建 WLAN P2P 应用
+            创建 WLAN P2P 应用涉及为应用创建并注册广播接收器、发现对等设备，连接到对等设备，以及将数据传输到对等设备。以下部分将介绍如何完成此操作。
+            1）初始化设置
+                在使用 WLAN P2P API 之前，您必须确保您的应用可以访问硬件，并且设备支持 WLAN P2P API 协议。如果设备支持 WLAN P2P，您可以获得 WifiP2pManager
+              的实例，创建并注册广播接收器，然后开始使用 WLAN P2P API。
+                1-- 请求在设备上使用 WLAN 硬件的权限，同时声明您的应用在 Android 清单中具有正确的最低 SDK 版本 ：
+                    <uses-sdk android:minSdkVersion="14" />
+                    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+                    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+                    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+                    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+                    <uses-permission android:name="android.permission.INTERNET" />
+                    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+                    还需要启动位置信息，否则无法调用以下API：discoverPeers、discoverServices、requestPeers
+                2-- 检查 WLAN P2P 是否开启并受支持。在广播接收器收到 WIFI_P2P_STATE_CHANGED_ACTION 的 Intent 时，在接收器中进行检查
+                    示例 ：
+                        @Override
+                        public void onReceive(Context context, Intent intent) {
+                        ...
+                        String action = intent.getAction();
+                        if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
+                            int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
+                            if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
+                                // Wifi P2P is enabled
+                            } else {
+                                // Wi-Fi P2P is not enabled
+                            }
+                        }
+                        ...
+                        }
+                3-- 在 Activity 的 onCreate() 方法中，获取 WifiP2pManager 的实例，并通过调用 initialize()，在 WLAN P2P 框架中注册您的
+                  应用。此方法会返回 WifiP2pManager.Channel，用于将您的应用连接到 WLAN P2P 框架。此外，您还应该通过 WifiP2pManager 和
+                  WifiP2pManager.Channel 对象以及对 Activity 的引用，创建广播接收器实例。这样广播接收器便可通知 Activity 感兴趣的事件并
+                  进行相应更新。此外，您还可以操纵设备的 WLAN 状态（如有必要）：
+                    示例 ：
+                        WifiP2pManager manager;
+                        Channel channel;
+                        BroadcastReceiver receiver;
+                        ...
+                        @Override
+                        protected void onCreate(Bundle savedInstanceState){
+                            ...
+                            manager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+                            channel = manager.initialize(this, getMainLooper(), null);
+                            receiver = new WiFiDirectBroadcastReceiver(manager, mChannel, this);
+                            ...
+                        }
+                4-- 创建 Intent 过滤器，然后添加与广播接收器检查内容相同的 Intent：
+                    示例 ：
+                        IntentFilter intentFilter;
+                        ...
+                        @Override
+                        protected void onCreate(Bundle savedInstanceState){
+                            ...
+                            intentFilter = new IntentFilter();
+                            intentFilter.addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION);
+                            intentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
+                            intentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
+                            intentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+                            ...
+                        }
+                5-- 在 Activity 的 onResume() 方法中注册广播接收器，然后在 Activity 的onPause() 方法中取消注册该接收器：
+                    示例 ：
+                        /* 注册 */
+                        @Override
+                        protected void onResume() {
+                            super.onResume();
+                            registerReceiver(mReceiver, intentFilter);
+                        }
+                        /* 取消注册 */
+                        @Override
+                        protected void onPause() {
+                            super.onPause();
+                            unregisterReceiver(mReceiver);
+                        }
+                获取 WifiP2pManager.Channel 并设置广播接收器后，应用便可调用 WLAN P2P 方法并收到 WLAN P2P Intent。
+        8】发现对等设备
+            调用 discoverPeers()，以检测范围内的可用对等设备。对此功能的调用为异步操作，如果您已创建 WifiP2pManager.ActionListener，
+          则系统会通过 onSuccess() 和 onFailure() 告知应用成功与否。onSuccess() 方法仅会通知您发现进程已成功，但不会提供有关其发现的
+          实际对等设备（如有）的任何信息：
+            示例 ：
+                manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
+                    @Override
+                    public void onSuccess() {
+                        ...
+                    }
 
+                    @Override
+                    public void onFailure(int reasonCode) {
+                        ...
+                    }
+                });
+            如果发现进程成功并检测到对等设备，则系统会广播 WIFI_P2P_PEERS_CHANGED_ACTION Intent，您可以在广播接收器中侦听该 Intent，
+          以获取对等设备列表。当应用接收到 WIFI_P2P_PEERS_CHANGED_ACTION Intent 时，您可以通过 requestPeers() 请求已发现对等设备的列表。
+            示例 ：
+                PeerListListener myPeerListListener;
+                ...
+                if (WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION.equals(action)) {
 
+                    // request available peers from the wifi p2p manager. This is an
+                    // asynchronous call and the calling activity is notified with a
+                    // callback on PeerListListener.onPeersAvailable()
+                    if (manager != null) {
+                        manager.requestPeers(channel, myPeerListListener);
+                    }
+                }
+            requestPeers() 方法也为异步操作，并可在对等设备列表可用时通过。
+            onPeersAvailable()（定义见 WifiP2pManager.PeerListListener 接口）通知您的 Activity。
+            onPeersAvailable() 方法为您提供 WifiP2pDeviceList，您可对其进行迭代以查找希望连接的对等设备。
+        9】连接到对等设备
+            获取可能对等设备的列表，且已确定您要连接的设备后，调用connect() 方法即可连接到相应设备。调用此方法需要使用 WifiP2pConfig 对象，
+          其中包含要连接的设备的信息。您可以通过 WifiP2pManager.ActionListener 获知连接是否成功。以下代码展示如何创建与所需设备的连接：
+            示例 ：
+                //obtain a peer from the WifiP2pDeviceList
+                WifiP2pDevice device;
+                WifiP2pConfig config = new WifiP2pConfig();
+                config.deviceAddress = device.deviceAddress;
+                manager.connect(channel, config, new ActionListener() {
 
+                    @Override
+                    public void onSuccess() {
+                        //success logic
+                    }
 
+                    @Override
+                    public void onFailure(int reason) {
+                        //failure logic
+                    }
+                });
+        10】传输数据
+            建立连接后，您可以通过套接字在设备之间传输数据。数据传输的基本步骤如下：
+            1）创建 ServerSocket。此套接字会在指定端口等待来自客户端的连接，然后加以屏蔽直到连接发生，因此请在后台线程中也执行此操作。
+            2）创建客户端 Socket。客户端使用 IP 地址和服务器套接字端口连接到服务器设备。
+            3）将数据从客户端发送到服务器。客户端套接字成功连接到服务器套接字后，您可以通过字节流将数据从客户端发送到服务器。
+            4）服务器套接字等待客户端连接（通过 accept() 方法）。在客户端连接前，此调用会屏蔽连接，所以这是另一个线程。发生连接时，
+            服务器设备可接收到客户端数据。对这些数据执行任何操作，例如将其保存到文件中，或向用户显示这些数据。
+          以下示例（修改自 WLAN P2P 演示示例）展示如何创建此客户端-服务器套接字通信，以及如何通过服务将 JPEG 图像从客户端传输到服务器。如需完整工作示例，请编译并运行 WLAN P2P 演示示例。
+            public static class FileServerAsyncTask extends AsyncTask {
 
+                private Context context;
+                private TextView statusText;
 
+                public FileServerAsyncTask(Context context, View statusText) {
+                    this.context = context;
+                    this.statusText = (TextView) statusText;
+                }
 
+                @Override
+                protected String doInBackground(Void... params) {
+                    try {
 
+                        /**
+                         * Create a server socket and wait for client connections. This
+                         * call blocks until a connection is accepted from a client
+                         */
+                        ServerSocket serverSocket = new ServerSocket(8888);
+                        Socket client = serverSocket.accept();
 
+                        /**
+                         * If this code is reached, a client has connected and transferred data
+                         * Save the input stream from the client as a JPEG file
+                         */
+                        final File f = new File(Environment.getExternalStorageDirectory() + "/"
+                                + context.getPackageName() + "/wifip2pshared-" + System.currentTimeMillis()
+                                + ".jpg");
 
+                        File dirs = new File(f.getParent());
+                        if (!dirs.exists())
+                            dirs.mkdirs();
+                        f.createNewFile();
+                        InputStream inputstream = client.getInputStream();
+                        copyFile(inputstream, new FileOutputStream(f));
+                        serverSocket.close();
+                        return f.getAbsolutePath();
+                    } catch (IOException e) {
+                        Log.e(WiFiDirectActivity.TAG, e.getMessage());
+                        return null;
+                    }
+                }
 
+                /**
+                 * Start activity that can handle the JPEG image
+                 */
+                @Override
+                protected void onPostExecute(String result) {
+                    if (result != null) {
+                        statusText.setText("File copied - " + result);
+                        Intent intent = new Intent();
+                        intent.setAction(android.content.Intent.ACTION_VIEW);
+                        intent.setDataAndType(Uri.parse("file://" + result), "image/*");
+                        context.startActivity(intent);
+                    }
+                }
+            }
+            在客户端上，通过客户端套接字连接到服务器套接字，然后传输数据。本示例传输的是客户端设备文件系统中的 JPEG 文件。
+                示例 ：
+                    Context context = this.getApplicationContext();
+                    String host;
+                    int port;
+                    int len;
+                    Socket socket = new Socket();
+                    byte buf[]  = new byte[1024];
+                    ...
+                    try {
+                        /**
+                         * Create a client socket with the host,
+                         * port, and timeout information.
+                         */
+                        socket.bind(null);
+                        socket.connect((new InetSocketAddress(host, port)), 500);
 
+                        /**
+                         * Create a byte stream from a JPEG file and pipe it to the output stream
+                         * of the socket. This data is retrieved by the server device.
+                         */
+                        OutputStream outputStream = socket.getOutputStream();
+                        ContentResolver cr = context.getContentResolver();
+                        InputStream inputStream = null;
+                        inputStream = cr.openInputStream(Uri.parse("path/to/picture.jpg"));
+                        while ((len = inputStream.read(buf)) != -1) {
+                            outputStream.write(buf, 0, len);
+                        }
+                        outputStream.close();
+                        inputStream.close();
+                    } catch (FileNotFoundException e) {
+                        //catch logic
+                    } catch (IOException e) {
+                        //catch logic
+                    }
 
-
-
+                    /**
+                     * Clean up any open sockets when done
+                     * transferring or if an exception occurred.
+                     */
+                    finally {
+                        if (socket != null) {
+                            if (socket.isConnected()) {
+                                try {
+                                    socket.close();
+                                } catch (IOException e) {
+                                    //catch logic
+                                }
+                            }
+                        }
+                    }
