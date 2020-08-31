@@ -3272,3 +3272,604 @@ Android学习笔记
                             }
                         }
                     }
+    3、WLAN 感知概览
+        1】简介 ：WLAN 感知功能使搭载 Android 8.0（API 级别 26）及更高版本的设备能够发现彼此并直接进行连接，它们之间无需任何其他类型的连接。
+            WLAN 感知也称为“邻近感知网络”(NAN)。
+                WLAN 感知网络的工作原理是与邻近设备组建集群，如果设备是某个区域的第一个设备，则创建一个新集群。此集群行为适用于整个设备，由
+            WLAN 感知系统服务管理；应用无法控制集群行为。应用使用 WLAN 感知 API 与 WLAN 感知系统服务通信，后者管理设备上的 WLAN 感知硬件。
+        2】应用可通过 WLAN 感知 API 实现操作 ：
+            1）发现其他设备 ：
+                    此 API 具有查找其他附近设备的机制。此过程会在一台设备发布一项或多项可发现服务时启动。然后，当设备订阅一项或多项服务并进入
+                发布者的 WLAN 范围时，订阅者会收到一条告知已发现匹配发布者的通知。在订阅者发现发布者后，订阅者可以发送短消息或与发现的设备建立
+                网络连接。设备可以既是发布者又是订阅者。
+            2）创建网络连接 ：
+                    两台设备发现彼此后，可以创建没有接入点的双向 WLAN 感知网络连接。
+            与蓝牙连接相比，WLAN 感知网络连接支持的覆盖范围更广，支持的吞吐率更高。这些类型的连接适用于在用户之间共享大量数据的应用，例如照片共享应用。
+      运用部分 :
+        1】初始设置：
+            1）申请权限
+                <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+                <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+                <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+            2）使用 PackageManager API 检查设备是否支持 WLAN 感知功能
+                context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI_AWARE);
+            3）检查 WLAN 感知功能当前是否可用。设备上可能存在 WLAN 感知功能，但当前可能无法使用，因为用户已停用 WLAN 或位置信息服务。如果正在使用 WLAN
+            直连、SoftAP 或网络共享，某些设备可能不支持 WLAN 感知功能，具体取决于其硬件和固件功能。要检查 WLAN 感知功能当前是否可用，请调用 isAvailable()。
+                WLAN 感知功能的可用性随时都可能发生变化。应用应注册 BroadcastReceiver 才能收到每当可用性发生变化时发送的 ACTION_WIFI_AWARE_STATE_CHANGED。
+            应用收到该广播 Intent 后，应舍弃所有现有会话（假设 WLAN 感知服务已中断），然后检查当前的可用性状态并相应地调整其行为。
+                代码示例 ：
+                    WifiAwareManager wifiAwareManager =
+                                (WifiAwareManager)context.getSystemService(Context.WIFI_AWARE_SERVICE)
+                        IntentFilter filter =
+                                new IntentFilter(WifiAwareManager.ACTION_WIFI_AWARE_STATE_CHANGED);
+                        BroadcastReceiver myReceiver = new BroadcastReceiver() {
+                            @Override
+                            public void onReceive(Context context, Intent intent) {
+                                // discard current sessions
+                                if (wifiAwareManager.isAvailable()) {
+                                    ...
+                                } else {
+                                    ...
+                                }
+                            }
+                        };
+                        context.registerReceiver(myReceiver, filter);
+        2】获取会话
+            1）要开始使用 WLAN 感知功能，您的应用必须通过调用 attach() 获取 WifiAwareSession。此方法会执行以下操作：
+                1-- 开启 WLAN 感知硬件
+                2-- 加入或组建 WLAN 感知集群
+                3-- 创建一个包含唯一命名空间的 WLAN 感知会话，该命名空间充当在其中创建的所有发现会话的容器
+              应用成功附加，则系统会执行 onAttached() 回调。该回调提供了一个 WifiAwareSession 对象，应用应该将该对象用于所有后续会话操作。应用可以使用会话来发布服务或订阅服务。
+              应用只能调用 attach() 一次。如果应用调用 attach() 多次，则应用会为每次调用接收不同的会话，且每个会话都有自己的命名空间。适用于复杂的情况，通常应该避免。
+              【*】注意：只要有活动的会话，系统就会与 WLAN 感知集群保持同步。此集群操作会消耗资源和电量。为了节省资源，请在不再需要会话时调用 WifiAwareSession.close()。
+        3】发布服务
+            1）使服务可被检测到，需要调用采用下列参数的 publish() 方法：
+                1-- PublishConfig 指定服务名称和其他配置属性，例如匹配过滤器。
+                2-- DiscoverySessionCallback 指定发生事件时（例如订阅者收到消息时）要执行的操作。
+            2）示例 ：
+                PublishConfig config = new PublishConfig.Builder()
+                        .setServiceName(“Aware_File_Share_Service_Name”)
+                        .build();
+
+                    awareSession.publish(config, new DiscoverySessionCallback() {
+                        @Override
+                        public void onPublishStarted(PublishDiscoverySession session) {
+                            ...
+                        }
+                        @Override
+                        public void onMessageReceived(PeerHandle peerHandle, byte[] message) {
+                            ...
+                        }
+                    }, null);
+            3）相关处理逻辑 ：
+                1-- 如果发布成功，则会调用 onPublishStarted() 回调方法。
+                2-- 发布后，当运行匹配订阅者应用的设备进入发布设备的 WLAN 范围时，订阅者会发现该服务
+                3-- 当订阅者发现发布者时，发布者不会收到通知。
+                4-- 订阅者向发布者发送消息，则发布者会收到通知，系统会调用 onMessageReceived() 回调方法，可以使用此方法的 PeerHandle 参数向订阅者回发消息或创建与订阅者的连接。
+                5-- 调用 DiscoverySession.close() 可以关闭发布服务，如果不调用此方法，系统无法保证超出范围的会话何时关闭。
+        4】订阅服务
+            1）当需要订阅服务时，需要调用采用下列参数的 subscribe() 方法：
+                1-- SubscribeConfig 指定要订阅的服务的名称和其他配置属性，例如匹配过滤器。
+                2-- DiscoverySessionCallback 指定发生事件时（例如发现发布者时）要执行的操作。
+            2）示例 ：
+                SubscribeConfig config = new SubscribeConfig.Builder()
+                        .setServiceName("Aware_File_Share_Service_Name")
+                        .build();
+
+                    awareSession.subscribe(config, new DiscoverySessionCallback() {
+                        @Override
+                        public void onSubscribeStarted(SubscribeDiscoverySession session) {
+                            ...
+                        }
+
+                        @Override
+                        public void onServiceDiscovered(PeerHandle peerHandle,
+                                byte[] serviceSpecificInfo, List<byte[]> matchFilter) {
+                            ...
+                        }
+                    }, null);
+            3）相关处理逻辑 ：
+                1-- 如果发布成功，则会调用 onPublishStarted() 回调方法。
+                2-- 可以使用回调中的 SubscribeDiscoverySession 参数在应用发现发布者后与之进行通信，因此应该保存此引用。
+                  就是用一个全局变量来保存这个对象实现持久通信。
+                3-- 可以随时通过对发现会话调用 updateSubscribe() 来更新订阅会话。
+                4-- 订阅者进入等待匹配的发布者的 WLAN 范围时，系统会执行 onServiceDiscovered() 回调方法。可以使用此回调中
+                  的 PeerHandle 参数向该发布者发送消息或创建与该发布者的连接。
+                5-- 调用 DiscoverySession.close() 可以关闭发布服务，如果不调用此方法，系统无法保证超出范围的会话何时关闭。
+        5】发送消息
+            1）前期准备（创建相关对象）
+                1-- DiscoverySession 对象。此对象可以调用 sendMessage()。应用通过发布服务或订阅服务来获取 DiscoverySession。
+                2-- 另一台设备的 PeerHandle，用于传送消息。应用通过以下两种方式之一获取另一台设备的 PeerHandle：
+                    1- 应用发布服务并接收来自订阅者的消息。应用从 onMessageReceived() 回调中获取订阅者的 PeerHandle。
+                    2- 应用订阅某项服务。然后，当发现匹配的发布者时，应用会从 onServiceDiscovered() 回调中获取发布者的 PeerHandle。
+            2）发送消息 ：
+                调用 sendMessage() 方法即可发送，但会发生以下回调 ：
+                    1-- 当对等设备成功收到消息后，系统会在发送方应用中调用 onMessageSendSucceeded() 回调。
+                    2-- 当对等设备收到消息后，系统会在接收方应用中调用 onMessageReceived() 回调。
+                【*】注意：消息通常用于轻量级消息传递，因为它们可能无法送达（或无序送达、多次送达）且长度限制在大约 255 个字节。要确定确切的长度限制，
+                  请调用 getMaxServiceSpecificInfoLength()。对于高速双向通信，您的应用应该改为 创建连接 。
+                【*】虽然需要 PeerHandle 才能与对等设备进行通信，但您不应依赖它作为对等设备的永久标识符。应用可以使用更高级别的标识符，这些标识符嵌入
+                  在发现服务本身或后续消息中。您可以使用 PublishConfig 或 SubscribeConfig 的 setMatchFilter() 或 setServiceSpecificInfo() 方法在发
+                  现服务中嵌入标识符。setMatchFilter() 方法会影响发现，而 setServiceSpecificInfo() 方法不会影响发现。
+                【*】在消息中嵌入标识符意味着修改消息字节数组以包含标识符（例如，作为前几个字节）。（只需要能够确定身份即可）
+        6】创建连接
+            1）简介 : WLAN 感知功能支持两个 WLAN 感知设备之间的客户端-服务器网络连接。
+            2）实现操作 ：
+                1-- 使用 WLAN 感知发现功能（在服务器上）发布服务并（在客户端上）订阅服务。
+                2-- 订阅者发现发布者后，从订阅者向发布者发送消息。
+                3-- 在发布者设备上启动 ServerSocket，并设置或获取其端口：
+                    ServerSocket ss = new ServerSocket(0);
+                    int port = ss.getLocalPort();
+                4-- 使用 ConnectivityManager 和 WifiAwareNetworkSpecifier 在发布者设备上请求 WLAN 感知网络，指定发现会话和订阅者的 PeerHandle，后者
+                  是您通过订阅者发送的消息获取的：
+                    NetworkSpecifier networkSpecifier = new WifiAwareNetworkSpecifier.Builder(discoverySession, peerHandle)
+                        .setPskPassphrase("somePassword")
+                        .setPort(port)
+                        .build();
+                    NetworkRequest myNetworkRequest = new NetworkRequest.Builder()
+                        .addTransportType(NetworkCapabilities.TRANSPORT_WIFI_AWARE)
+                        .setNetworkSpecifier(networkSpecifier)
+                        .build();
+                    ConnectivityManager.NetworkCallback callback = new ConnectivityManager.NetworkCallback() {
+                        @Override
+                        public void onAvailable(Network network) {
+                            ...
+                        }
+
+                        @Override
+                        public void onCapabilitiesChanged(Network network, NetworkCapabilities networkCapabilities) {
+                            ...
+                        }
+
+                        @Override
+                        public void onLost(Network network) {
+                            ...
+                        }
+                    };
+
+                        ConnectivityManager connMgr.requestNetwork(networkRequest, callback);
+                5-- 使用与发布者相同的方法在订阅者设备上请求 WLAN 感知网络。创建 NetworkSpecifier 时，请勿指定端口。当网络连接可用、已更改或丢失时，
+                  系统会调用相应的回调方法。
+                6-- 对订阅者调用 onAvailable() 方法之后，可以使用一个 Network 对象打开 Socket 以与发布者设备上的 ServerSocket 进行通信，但需要
+                  知道 ServerSocket 的 IPv6 地址和端口。可以从 onCapabilitiesChanged() 回调中提供的 NetworkCapabilities 对象中获取这些信息：
+                    WifiAwareNetworkInfo peerAwareInfo = (WifiAwareNetworkInfo) networkCapabilities.getTransportInfo();
+                    Inet6Address peerIpv6 = peerAwareInfo.getPeerIpv6Addr();
+                    int peerPort = peerAwareInfo.getPort();
+                    ...
+                    Socket socket = network.getSocketFactory().createSocket(peerIpv6, peerPort);
+                7-- 完成网络连接后，请调用 unregisterNetworkCallback()。（注销网络回调）
+        7】对等设备测距和位置感知发现
+            1）简介 ：具有 WLAN RTT 位置功能的设备可以直接测量到对等设备的距离，并利用此信息限制 WLAN 感知服务发现。
+                      WLAN RTT API 支持直接使用 WLAN 感知对等设备的 MAC 地址或 PeerHandle 测量到该设备的距离。
+                      WLAN 感知发现功能可以被限制为仅发现特定地理围栏内的服务。例如，您可以设置地理围栏，以便发现发布
+                  "Aware_File_Share_Service_Name" 服务且距离在 3 米（指定为 3000mm）到 10 米（指定为 10000mm）之间的设备。
+            2）启用地理围栏的方法 ：
+                1-- 发布者必须使用 setRangingEnabled(true) 对发布的服务启用测距。如果发布者未启用测距，则会忽略订阅者指定的任何地理围栏限制，
+                  并执行正常发现而忽略距离。
+                2-- 订阅者必须使用 setMinDistanceMm 和 setMaxDistanceMm 的某种组合来指定地理围栏。
+                    对于任一值，未指定的距离表示没有限制。只指定最大距离意味着最小距离为 0。仅指定最小距离意味着没有最大值。
+                如果在地理围栏内发现对等服务，则会触发 onServiceDiscoveredWithinRange 回调，从而提供与对等设备的测量距离。然后，可以根据需要调用直接 WLAN RTT API，以便稍后测量距离。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
