@@ -1,3 +1,5 @@
+include ':drawerlayout'
+include ':toolbar'
 include ':bluetoothtest'
 include ':networktest'
 include ':webviewtest'

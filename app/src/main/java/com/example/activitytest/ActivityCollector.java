@@ -12,10 +12,9 @@ public class ActivityCollector {
         activities.add(activity);
     }
 
-    public static void removeActivity(Activity activity) {  //将获得从集合中移除
+    public static void removeActivity(                                             Activity activity) {  //将获得从集合中移除
         activities.remove(activity);
     }
-
     public static void finishAll() {  //结束所以集合中的活动
         for(Activity activity : activities) {
             if (!activity.isFinishing()) {

@@ -3450,13 +3450,58 @@ Android学习笔记
                     对于任一值，未指定的距离表示没有限制。只指定最大距离意味着最小距离为 0。仅指定最小距离意味着没有最大值。
                 如果在地理围栏内发现对等服务，则会触发 onServiceDiscoveredWithinRange 回调，从而提供与对等设备的测量距离。然后，可以根据需要调用直接 WLAN RTT API，以便稍后测量距离。
 
+十三、Material Design 实践——最佳UI体验
+    1、简介 ：一种全新的界面设计语言，包括视觉、运动、互动效果等特性
+    2、Toolbar（参考toolbar module）
+        1】简介 ：继承了 ActionBar 的所有功能（自定义控件标题栏的按钮），灵活性更高，初始的应用程序都会有显示 ActionBar（由于主题原因），
+              所以我们需要指定一个不带 ActionBar 的主题（常见 ：Theme.AppCompat.NoActionBar(深色主题) 和 Theme.AppCompat.Light.NoActionBar（浅色主题））
+            <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        2】需要重写颜色属性（含义参考mipmap/ToolBar.png）
+            1）colorPrimary
+            2）colorPrimaryDark
+            3）colorAccent ：不只是用来指定按钮的颜色，表示强调的意思（例如：一些控件选中后也会使用这个颜色）
+        3】相关解释
+            <?xml version="1.0" encoding="utf-8"?>
+            <FrameLayout
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"  // 指定命名空间，现在可以使用 app:attribute 的写法，但是为了兼容
+                                                                        老系统，所以采用 app:attribute 写法（许多Material属性是在新系
+                                                                        统中新增的，采取这种方法是为了兼容老系统）
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
+                <androidx.appcompat.widget.Toolbar
+                    android:id="@+id/toolbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="?attr/actionBarSize"
+                    android:background="@color/colorPrimary"
+                    android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"  // 指定ToolBar的主题
+                    app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>  // 指定菜单项的主题
+            </FrameLayout>
+        4】常用功能
+            1）修改文字————在AndroidManifest.xml中修改
+                <activity android:name=".MainActivity"
+                            android:label="标题">
+                如果不指定会采用默认的名称（应用名）
+            2）添加 action 按钮
 
-
-
-
-
-
+                <item
+                        android:id="@+id/backup"
+                        android:icon="@drawable/ic_launcher_background"
+                        android:title="Backup"
+                        app:showAsAction="always"/>  // 设置显示模式
+                    always : 永远显示在 ToolBar 中
+                    never ：显示在菜单栏中
+                    ifRoom ：屏幕空间足够的话显示在 ToolBar 中，不够显示在菜单栏中
+                    显示在ToolBar中 ：只显示图标
+                    显示在菜单栏中 ：只显示文字
+    3、滑动菜单(DrawerLayout)
+        1】简介 ：将一些菜单选项隐藏起来，而不是放在主屏幕上，然后可以通过滑动的方式将菜单项显示出来
+        2】DrawerLayout运用
+            1）介绍 ：DrawerLayout 它是一个布局，布局中允许放入两个自接子控件，第一个子控件（布局）是主屏幕中显示的内容，第二个子控件（布局）
+                    是滑动菜单中显示的内容。
+            2）使用参考 drawerlayout module ，实现了右滑唤出菜单页（可添加多个控件，需要放在一个布局中）
+            【*】注意 ：必须指定第二个布局或控件的 layout_gravity 属性，设置隐藏的方位（例如隐藏在左边或右边）
 
 
 
