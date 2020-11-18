@@ -3502,13 +3502,85 @@ Android学习笔记
                     是滑动菜单中显示的内容。
             2）使用参考 drawerlayout module ，实现了右滑唤出菜单页（可添加多个控件，需要放在一个布局中）
             【*】注意 ：必须指定第二个布局或控件的 layout_gravity 属性，设置隐藏的方位（例如隐藏在左边或右边）
+            3）滑动菜单目前只能滑动拉出，现在 加上一个按钮来唤出滑动菜单
+                // 获取按钮的实例并设置属性
+                ActionBar actionBar = getSupportActionBar();
+                if (actionBar != null) {
+                    actionBar.setDisplayHomeAsUpEnabled(true);  // 显示导航按钮
+                    actionBar.setHomeAsUpIndicator(R.drawable.ic_launcher_background);  // 设置导航按钮图片
+                }
 
+                case android.R.id.home :
+                    drawerLayout.openDrawer(GravityCompat.START);  // 按钮唤出滑动菜单
+                    break;
+        3】注意 ：原则上可以再滑动菜单中定制任意布局，但是建议使用下一小节的 navigationview
 
+    4、NavigationView (滑动菜单的优化)
+        1】这个控件是google对滑动菜单的优化，使用时需要加入依赖项 ：
+            // 添加 Material 库，
+            implementation 'com.google.android.material:material:1.0.0'
+            // 开源项目 CircleImageView ：实现图片圆形化
+            implementation 'de.hdodenhof:circleimageview:3.0.1'
+        2】使用前我们需要准备：menu 和 headerLayout。前者用来在 NavigationView 中显示具体的菜单项，headerLayout用来在 NavigationView 中显示
+         头部布局。
+            1）创建 menu 文件(详细代码 menu 目录下的 nemu.xml)
+                1. 首先在 <menu> 中嵌套 <group> 标签， 表示创建一个组
+                2. 将 group 的 checkableBehavior 属性设置为 single ，表示组中的选项只能 单选
+                    <group android:checkableBehavior="single">
+                3. 创建 <item>（菜单项） 指定 id、图标、菜单项需要显示的文字
+                    <item android:id="@+id/navCall"
+                        android:icon="@drawable/call"
+                        android:title="Call"/>
 
-
-
-
-
+            2）准备 headerLayout（头部布局）--具体代码参考 nav_header.xml 文件
+              此处示例在头部布局中显示头像、用户名、头像
+                1. 在layout文件下下创建 nav_header.xml 文件
+                2. 布局文件最外层是一个 RelativeLayout ，宽度为 match_parent（与父控件相同），高度为 180dp（较为合适）
+                3. 在 RelativeLayout 中放置三个控件， CircleImageView 用来将图片圆形化（用来展示头像）；两个TextView，一个用来
+                显示邮箱，一个现实用户名。
+            3）获取 NavigationView 实例，然后调用 setCheckedItem 方法设置默认选项， 设置 setNavigationItemSelectedListener() 选择
+             监听器来监听 menu 选择情况。
+            4）注意 ：由于系统自带这有一个 ToolBar ，所以直接设置会报错，我们需要在清单中设置application的<theme>属性为NoActionBar
+                <application
+                    android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+                    />
+    5、悬浮按钮和可交互提示
+        1】悬浮按钮 ： FloatingActionButton
+            1）简介 ：实现悬浮按钮效果，可以设置图标
+            2）代码部分参考（navigationview 的 main_activity.xml） ：
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/fab"
+                        android:layout_gravity="bottom|end"
+                        android:layout_margin="16dp"
+                        android:src="@drawable/task1"
+                        app:elevation="8dp"/>  // 设置悬浮高度
+            3）处理点击事件
+                用法和普通按钮类似，通过添加点击事件监听器来捕获单击事件
+        2】可交互提示 ： Snackbar
+            1）简介 ：Snackbar允许在提示中加入一个可交互按钮，在按下按钮式会执行相关逻辑，用法和Toast类似，只是添加了
+                点击事件。
+            2）代码部分 （navigationview 的 MainActivity.java）：
+                Snackbar.make(v, "data deleted", Snackbar.LENGTH_SHORT)
+                        .setAction("Undo", new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                Toast.makeText(MainActivity.this, "undo succeed", Toast.LENGTH_SHORT).show();
+                            }
+                        }).show();
+                Snackbar的make方法创建一个Snackbar对象实例，传入一个当前界面布局的view（会自动查找最外层的布局），进而展示Snackbar；
+              第二个参数是显示内容；第三个参数是Snackbar显示的时长.
+                第二步调用setAction()方法来设置一个动作，并在其中添加点击事件监听器，这样就可以与用户进行交互.
+        3】CoordinatorLayout
+            1）简介 ：CoordinatorLayout 可以监听所有子控件的各种事件，自动帮助我们做出最合理的响应。
+            2）CoordinatorLayout 可以完全替换 FrameLayout，不会有任何副作用
+            3）代码在 navigationview 的 main_activity.xml 中，替换前交互信息会遮挡悬浮按钮；替换后悬浮按钮会上浮（带有动画），
+            不会被遮挡。
+    6、卡片式布局
+        1】CardView
+            1）简介：实现卡片式布局效果，它实际上也是 FrameLayout ，只是额外的提供了圆角和阴影效果，有了立体的感觉
+            2）简单使用 ：
 
 
 

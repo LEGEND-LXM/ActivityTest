@@ -1,3 +1,8 @@
+include ':cardview3'
+include ':myapplication'
+include ':cardview2'
+include ':cardview'
+include ':navigationview'
 include ':drawerlayout'
 include ':toolbar'
 include ':bluetoothtest'
