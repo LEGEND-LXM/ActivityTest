@@ -3581,6 +3581,30 @@ Android学习笔记
         1】CardView
             1）简介：实现卡片式布局效果，它实际上也是 FrameLayout ，只是额外的提供了圆角和阴影效果，有了立体的感觉
             2）简单使用 ：
+                1- 第一步需要将需要的库导入 ： （原则上倒入第一个就可以实现了，建议第二个也导入）
+                    implementation 'com.google.android.material:material:1.2.1'
+                    implementation 'androidx.cardview:cardview:1.0.0'
+                2- 添加卡片布局 <com.google.android.material.card.MaterialCardView>
+                    通过 app:cardCornerRadius="4dp" 属性设置圆角大小
+                    通过 app:elevation 设置高度（高度值越大投影范围越大，效果越淡）
+                3- （本例实现瀑布流显示多个卡片布局，所以需要使用到 recyclerview 布局）需要导入依赖库
+                    implementation 'androidx.recyclerview:recyclerview:1.1.0'
+                    // 添加 recyclerview 布局的依赖库
+                    implementation 'com.github.bumptech.glide:glide:4.9.0'
+                    // 添加 glide 库的依赖，它是一个图片加载库，用于加载本地和网络上的图片
+                4- 在主活动中的 CoordinatorLayout 布局中添加一个 RecyclerView 用来实现瀑布流布局
+                        代码参考 activity_main.xml
+                5- 创建一个java实体类Fruit用来在后续保存图片对象（name字段保存名称；iamgeId字段保存水果图片资源ID）
+                        代码参考 Fruit.java 文件
+                6- 为 RecyclerView 子项指定自定义布局,最外层布局为 MaterialCardView（卡片布局），子项采用线性布局，
+                  主体是一个 ImageView 和 TextView ，用来显示图片及名称。
+                    android:scaleType="centerCrop" ：指定图片的缩放模式（示例参数为保持原有比例填充满ImageView，并将
+                  超出的部分裁减掉）
+                7- 新建 FruitAdapter 类来作为 RecyclerView 的适配器，让这个适配器继承自 RecyclerView.Adapter，
+                  将泛型指定为 FruitAdapter.ViewHolder
+                        代码参考 FruitAdapter.java
+                8- 在 MainActivity.java 中采用了 GridLayoutManager ，它第一个参数为 Context ，第二个为列数（每一行显示几列）
+
 
 
 
