@@ -6,11 +6,13 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import androidx.appcompat.widget.Toolbar;
@@ -33,48 +35,67 @@ public class MainActivity extends AppCompatActivity {
     private List<Fruit> fruitList = new ArrayList<>();
 
     private FruitAdapter adapter;
+    private SwipeRefreshLayout swipeRefresh;
 
+    @SuppressLint("ResourceAsColor")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Log.d("CardView123", "1");
+
         Toolbar toolbar = findViewById(R.id.toolbar);
-        Log.d("CardView123", "2");
         setSupportActionBar(toolbar);
-        Log.d("CardView123", "3");
         mDrawerLayout = findViewById(R.id.drawerLayout);
-        Log.d("CardView123", "4");
         ActionBar actionBar = getSupportActionBar();
-        Log.d("CardView123", "5");
         FloatingActionButton fab = findViewById(R.id.fab);
-        Log.d("CardView123", "6");
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
             actionBar.setHomeAsUpIndicator(R.drawable.done32);
         }
-        Log.d("CardView123", "7");
+
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d("CardView123", "8");
                 Toast.makeText(MainActivity.this, "按下", Toast.LENGTH_SHORT).show();
             }
         });
 
-        Log.d("CardView123", "9");
         initFruits();
-        Log.d("CardView123", "10");
-        RecyclerView recyclerView = findViewById(R.id.recyclerView);
-        Log.d("CardView123", "11");
+        final RecyclerView recyclerView = findViewById(R.id.recyclerView);
         GridLayoutManager layoutManager = new GridLayoutManager(this, 2);
-        Log.d("CardView123", "12");
         recyclerView.setLayoutManager(layoutManager);
-        Log.d("CardView123", "13");
         adapter = new FruitAdapter(fruitList);
-        Log.d("CardView123", "14");
         recyclerView.setAdapter(adapter);
-        Log.d("CardView123", "15");
+
+        swipeRefresh = findViewById(R.id.swipeRefresh);
+        swipeRefresh.setColorSchemeColors(R.color.colorPrimary);  // 设置下拉刷新进度条的颜色
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() { // 设置下拉刷新的监听器
+            @Override
+            public void onRefresh() {  // 检测到下拉后调用
+                refreshFruits();
+            }
+        });
+    }
+
+    private void refreshFruits() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(1000);
+                } catch(InterruptedException e) {
+                    e.printStackTrace();
+                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        initFruits();
+                        adapter.notifyDataSetChanged();
+                        swipeRefresh.setRefreshing(false);
+                    }
+                });
+            }
+        }).start();
     }
 
     /**

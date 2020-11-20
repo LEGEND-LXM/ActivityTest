@@ -3604,7 +3604,23 @@ Android学习笔记
                   将泛型指定为 FruitAdapter.ViewHolder
                         代码参考 FruitAdapter.java
                 8- 在 MainActivity.java 中采用了 GridLayoutManager ，它第一个参数为 Context ，第二个为列数（每一行显示几列）
-
+        2】AppBarLayout
+            1）简介 ： AppBarLayout 是一个内部封装了很多滚动事件的垂直方向的LinearLayout
+            2）在上一节中，RecyclerView 布局会遮盖住 ToolBar ，加入 AppBarLayout 可以解决这一问题
+            3）用法 ：
+                第一步将 ToolBar 嵌套到 AppBarLayout 中；第二步给 RecyclerView 指定一个布局行为
+                (代码参考 activity_main.xml )
+            4）AppBarLayout 中的子控件可以指定如何影响 Activity 中发生的事件（通过 app:layout_scrollFlags 属性来设置），例 ：
+                app:layout_scrollFlags="scroll|enterAlways|snap"
+                scroll ：ToolBar 在 RecyclerView 向上滚动时会一起滚动并隐藏
+                enterAlways ：ToolBar 在 RecyclerView 向下滚动时会一起滚动并重新显示
+                snap ：当 ToolBar 还没有完全隐藏和显示时，会根据当前滚动的距离，自动选择隐藏或显示
+    7、下拉刷新
+        1】简介 ： SwipeRefreshLayout 是实现下拉刷新的核心类，我们将需要实现下拉刷新的类放置在 SwipeRefreshLayout 中，
+                就可以让这个控件实现下拉刷新
+        2】简单用法 ：(代码参考 activity_main.xml )
+            1）在布局文件中添加一个 SwipeRefreshLayout 组件，然后将需要实现下拉刷新的组件添加为它的子组件
+            2）在 .java 代码中创建实例
 
 
 
