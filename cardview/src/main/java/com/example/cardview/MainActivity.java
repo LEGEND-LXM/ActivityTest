@@ -86,12 +86,12 @@ public class MainActivity extends AppCompatActivity {
                 } catch(InterruptedException e) {
                     e.printStackTrace();
                 }
-                runOnUiThread(new Runnable() {
+                runOnUiThread(new Runnable() {  // 切换回主线程（主线程才能更新UI）
                     @Override
                     public void run() {
                         initFruits();
-                        adapter.notifyDataSetChanged();
-                        swipeRefresh.setRefreshing(false);
+                        adapter.notifyDataSetChanged();  // 通知数据发生了变化
+                        swipeRefresh.setRefreshing(false);  // 表示刷新事件结束，隐藏那个刷新进度条
                     }
                 });
             }

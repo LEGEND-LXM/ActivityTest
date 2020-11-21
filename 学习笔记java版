@@ -3621,6 +3621,14 @@ Android学习笔记
         2】简单用法 ：(代码参考 activity_main.xml )
             1）在布局文件中添加一个 SwipeRefreshLayout 组件，然后将需要实现下拉刷新的组件添加为它的子组件
             2）在 .java 代码中创建实例
+                swipeRefresh = findViewById(R.id.swipeRefresh); // 获取实例
+                swipeRefresh.setColorSchemeColors(R.color.colorPrimary);  // 设置下拉刷新进度条的颜色
+                swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() { // 设置下拉刷新的监听器
+                    @Override
+                    public void onRefresh() {  // 检测到下拉后调用
+                        refreshFruits();
+                    }
+                });
 
 
 
