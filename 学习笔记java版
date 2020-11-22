@@ -3638,7 +3638,7 @@ Android学习笔记
                     1- 编写布局文件(水果标题栏) ：水果内容详情(代码参考 cardview（module）-> activity_fruit.xml)
                         ① 实现标题部分 ：使用 CoordinatorLayout 作为最外层布局
                         ② 在 CoordinatorLayout 中嵌套一个 AppBarLayout
-                        ③ 在 CoordinatorLayout 中嵌套一个 CollapsingToolBarLayout
+                        ③ 在 AppBarLayout 中嵌套一个 CollapsingToolBarLayout
                         <com.google.android.material.appbar.CollapsingToolbarLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
@@ -3662,9 +3662,25 @@ Android学习笔记
                         app:layout_anchor="@id/appBar" : 设置锚点（设定显示区域）
                         app:layout_anchorGravity="bottom|end" ：设置显示的方位，基于被设置锚点的布局
                 2》编写 FruitActivity.java ，解释与代码参考 cardview（module）-> FruitActivity.java
-                3》处理 RecyclerView 点击事件，当点击时打开 FruitActivity
-
-
+                3》处理 RecyclerView 点击事件，当点击时打开 FruitActivity 代码参考 cardview（module）-> FruitAdapter.java
+        2】充分利用系统状态栏空间
+            1）将背景图和系统状态栏融合
+                1》利用 android:fitsSystemWindows 属性实现，对于 CoordinatorLayout 、 AppBarLayout 、 CollapsingToolBarLayout
+                这种嵌套结构中将控件的 android:fitsSystemWindows 属性设置为 true ，表示该控件会出现在系统状态栏里。
+                2》对于我们的程序来说，水果栏标题中的 ImageView 因该设置为这个属性（我们需要给他的所有父布局都设置这个属性才会有效）
+                3》另外，还需要将在程序中将状态栏颜色指定为透明色 ：
+                    将主题中将 android:statusBar 属性的值指定为 @android:color/transparent （从API21--android 5.0 开始设置）
+                    ① 在 res 下创建 values-v21(只有API高于21的系统才能读取) 目录，然后在其中创建 styles.xml 文件 (代码参考 values-v21 -> styles.xml)
+                        <style name="FruitActivityTheme"
+                            parent="AppTheme">
+                            <item name="android:statusBarColor">@android:color/transparent</item>
+                        </style>
+                    ② 修改styles.xml（原），加入关于 FruitActivityTheme 的声明（保证低版本系统也能正常运行）
+                        <style name="FruitActivityTheme" parent="AppTheme">
+                        </style>
+                4》单独给需要更改的 Activity
+                    <activity android:name=".FruitActivity"
+                              android:theme="@style/FruitActivityTheme">
 
 
 
