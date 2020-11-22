@@ -7,16 +7,13 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.annotation.SuppressLint;
-import android.app.Notification;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import androidx.appcompat.widget.Toolbar;
-import androidx.appcompat.app.ActionBar;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -76,7 +73,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
+    /**
+     * 刷新界面
+     * */
     private void refreshFruits() {
         new Thread(new Runnable() {
             @Override

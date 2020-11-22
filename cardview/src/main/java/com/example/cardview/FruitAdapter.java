@@ -1,6 +1,8 @@
 package com.example.cardview;
 
 import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,7 +14,6 @@ import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.google.android.material.card.MaterialCardView;
 
 import java.util.List;
 
@@ -45,8 +46,31 @@ public class FruitAdapter extends RecyclerView.Adapter<FruitAdapter.ViewHolder> 
         if (mContext == null) {
             mContext = parent.getContext();
         }
+        Log.d("FruitAdapter1", "1");
         View view = LayoutInflater.from(mContext).inflate(R.layout.fruit_item, parent, false);
-        return new ViewHolder(view);
+        Log.d("FruitAdapter1", "2");
+        final ViewHolder holder = new ViewHolder(view);
+        Log.d("FruitAdapter1", "3");
+        holder.cardView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d("FruitAdapter1", "4");
+                int position = holder.getAdapterPosition();
+                Log.d("FruitAdapter1", "5");
+                Fruit fruit = mFruitList.get(position);
+                Log.d("FruitAdapter1", "6");
+                Intent intent = new Intent(mContext, FruitActivity.class);
+                Log.d("FruitAdapter1", "7");
+                intent.putExtra(FruitActivity.FRUIT_NAME, fruit.getName());
+                Log.d("FruitAdapter1", "8");
+                intent.putExtra(FruitActivity.FRUIT_IMAGE_ID, fruit.getImageId());
+                Log.d("FruitAdapter1", "9");
+                mContext.startActivity(intent);
+                Log.d("FruitAdapter1", "10");
+            }
+        });
+
+        return holder;
     }
 
     @Override

@@ -3629,6 +3629,42 @@ Android学习笔记
                         refreshFruits();
                     }
                 });
+    8、可折叠式标题栏（CollapsingToolBarLayout）
+        1】CollapsingToolBarLayout
+            1）简介 ：它是一个作用于 ToolBar 基础之上的布局，他让 ToolBar 效果变得更加丰富，但是它不能独立存在，必须
+                作为 AppBarLayout 的直接子布局来使用， AppBarLayout 必须是 CoordinatorLayout 的子布局
+            2）简单用法 ：
+                1》 创建一个新的 Activity
+                    1- 编写布局文件(水果标题栏) ：水果内容详情(代码参考 cardview（module）-> activity_fruit.xml)
+                        ① 实现标题部分 ：使用 CoordinatorLayout 作为最外层布局
+                        ② 在 CoordinatorLayout 中嵌套一个 AppBarLayout
+                        ③ 在 CoordinatorLayout 中嵌套一个 CollapsingToolBarLayout
+                        <com.google.android.material.appbar.CollapsingToolbarLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:id="@+id/collapsing_toolbar"
+                            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+                            // 指定 CollapsingToolbarLayout 折叠或趋于折叠的背景色
+                            app:contentScrim="?attr/colorPrimary"
+                            // scroll ：CollapsingToolbarLayout 会随着内容滚动而滚动
+                            // exitUntilCollapsed ：CollapsingToolbarLayout 随着滚动完成折叠后保留在界面上不在移出屏幕
+                            app:layout_scrollFlags="scroll|exitUntilCollapsed">
+                        ④ 在 CollapsingToolbarLayout 中定义标题具体内容
+                            app:layout_collapseMode : 指定当前控件在 CollapsingToolbarLayout 折叠过程中的折叠样式
+                            “pin” ：表示保持不变
+                            “parallax” ：表示产生一定的错位偏移（视觉效果较好）
+                    2- 编写布局文件(水果内容详情) ：(代码参考 cardview（module）-> activity_fruit.xml)
+                        ① 内容详情最外围采用 NestedScrollView 布局，它和 AppBarLayout 平级，它嵌套了响应滚动事件的功能。
+                        ② 【*】 NestedScrollView 内部只允许一个直接子布局（放置多个View需要先嵌入一个ViewGroup）,案例中使用 LinearLayout
+                        ③ 将 CardView 嵌套进 LinearLayout ，然后再讲显示水果名称的 TextView 嵌套在 CardView 中
+                    3- 在界面上添加一个悬浮按钮
+                        app:layout_anchor="@id/appBar" : 设置锚点（设定显示区域）
+                        app:layout_anchorGravity="bottom|end" ：设置显示的方位，基于被设置锚点的布局
+                2》编写 FruitActivity.java ，解释与代码参考 cardview（module）-> FruitActivity.java
+                3》处理 RecyclerView 点击事件，当点击时打开 FruitActivity
+
+
+
 
 
 
