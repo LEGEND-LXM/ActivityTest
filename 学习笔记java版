@@ -3657,6 +3657,7 @@ Android学习笔记
                         ① 内容详情最外围采用 NestedScrollView 布局，它和 AppBarLayout 平级，它嵌套了响应滚动事件的功能。
                         ② 【*】 NestedScrollView 内部只允许一个直接子布局（放置多个View需要先嵌入一个ViewGroup）,案例中使用 LinearLayout
                         ③ 将 CardView 嵌套进 LinearLayout ，然后再讲显示水果名称的 TextView 嵌套在 CardView 中
+                        ⑥ 【*】 卡片布局只能采用 CardView ，不能使用 MaterialCardView
                     3- 在界面上添加一个悬浮按钮
                         app:layout_anchor="@id/appBar" : 设置锚点（设定显示区域）
                         app:layout_anchorGravity="bottom|end" ：设置显示的方位，基于被设置锚点的布局

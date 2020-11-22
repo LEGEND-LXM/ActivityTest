@@ -4,13 +4,15 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toolbar;
+import androidx.appcompat.widget.Toolbar;
 import com.bumptech.glide.Glide;
 import com.google.android.material.appbar.CollapsingToolbarLayout;
 
@@ -35,14 +37,14 @@ public class FruitActivity extends AppCompatActivity {
         // 获取控件实例
         Toolbar toolbar = findViewById(R.id.fruitToolbar);
         Log.d("FruitActivity1", "5");
-        CollapsingToolbarLayout collapsingToolbar = findViewById(R.id.collapsing_toolbar);
-        Log.d("FruitActivity1", "6");
-        ImageView fruitImageView = findViewById(R.id.fruit_image_view);
-        Log.d("FruitActivity1", "7");
-        TextView fruitContentText = findViewById(R.id.fruit_content_view);
-        Log.d("FruitActivity1", "8");
         // 设置 ToolBar
-        setActionBar(toolbar);
+        setSupportActionBar(toolbar);
+        Log.d("FruitActivity1", "6");
+        CollapsingToolbarLayout collapsingToolbar = findViewById(R.id.collapsing_toolbar);
+        Log.d("FruitActivity1", "7");
+        ImageView fruitImageView = findViewById(R.id.fruit_image_view);
+        Log.d("FruitActivity1", "8");
+        TextView fruitContentText = findViewById(R.id.fruit_content_view);
         Log.d("FruitActivity1", "9");
         ActionBar actionBar = getSupportActionBar();
         Log.d("FruitActivity1", "10");
