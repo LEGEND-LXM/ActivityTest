@@ -3682,7 +3682,23 @@ Android学习笔记
                     <activity android:name=".FruitActivity"
                               android:theme="@style/FruitActivityTheme">
 
-
+十三、高级程序开发组件--JetPack
+    1、简介 ：JetPack 是一个开发组件工具集，主要用于帮我们编写出更加简洁的代码、简化开发过程，它大部分不依赖Android系统版本，
+        它的组件通常在androidx中，拥有很好的向下兼容性
+        1】基础 ：基础组件可提供横向功能，例如向后兼容性，测试和Kotlin语言的支持
+        2】架构 ：架构组件让设计更稳健、可测试且易维护的应用
+        3】行为 ：行为组件可帮助让应用与标准Android服务（如通知、权限、分享和Google助理）相集成
+        4】界面 ：界面组件可提供微件和辅助程序，让应用简单易用、有更好的体验，有助于简化界面开发
+    2、ViewModule
+        1】简介 ：JetPack 中最重要的组件之一，在传统开发模式下，Activity 开发任务太重，要负责逻辑处理、UI展示和网络回调，在大的项目上
+            会显得臃肿并且难以维护。ViewModule  可以帮助 Activity 分担工作，它专门用于存放与界面相关的数据（界面上看得到的数据、相关变量都应该放在
+            ViewModule 中）。
+                 ViewModule 不会再屏幕发生旋转时重新创建（Activity会），他只会随着 Activity 退出的时候一同销毁，将界面的相关变量放在 ViewModule
+            中能保证发生旋转时界面显示的数据不会丢失。
+        2】简单用法
+            1）添加依赖文件 ：implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
+            2）编程规范 ： 给每一个 Activity 都创建一个 ViewModule
+                为 MainActivity 创建一个对应 MainViewModule 类，继承 ViewModule
 
 
 

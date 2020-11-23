@@ -38,6 +38,7 @@
             <option value="$PROJECT_DIR$/sharedpreferencestest" />
             <option value="$PROJECT_DIR$/table" />
             <option value="$PROJECT_DIR$/toolbar" />
+            <option value="$PROJECT_DIR$/viewmodule" />
             <option value="$PROJECT_DIR$/webviewtest" />
           </set>
         </option>
