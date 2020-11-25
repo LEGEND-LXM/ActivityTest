@@ -43,7 +43,6 @@ public class MainActivity extends AppCompatActivity {
                 Message message = new Message();
                 message.what = UP_DATA_TEXT;
                 message.obj = textView;
-                Log.d("MainActivityTest","MainActivity ID查询"+textView.getId());
                 message.arg1 = viewModule.getCounter();
                 handler.sendMessage(message);
             }
@@ -70,11 +69,9 @@ public class MainActivity extends AppCompatActivity {
 
             switch (msg.what) {
                 case UP_DATA_TEXT :
-                    Log.d("MainActivityTest","MainActivity进入处理");
                     TextView textView = (TextView) msg.obj;
                     String str = String.valueOf(msg.arg1);
                     textView.setText(str);
-                    Log.d("MainActivityTest","MainActivity处理完成");
                     break;
                 default:
                     break;

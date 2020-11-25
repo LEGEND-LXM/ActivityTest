@@ -3697,8 +3697,13 @@ Android学习笔记
             中能保证发生旋转时界面显示的数据不会丢失。
         2】简单用法
             1）添加依赖文件 ：implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
-            2）编程规范 ： 给每一个 Activity 都创建一个 ViewModule
+            2）(编程规范 ： 给每一个 Activity 都创建一个 ViewModule)
                 为 MainActivity 创建一个对应 MainViewModule 类，继承 ViewModule
+                （代码参考 ViewModule（module）-> MainViewModule.java）
+            3）获取 MainViewModule 实例，这一步很关键 ：
+                MainViewModule viewModule = new ViewModelProvider(this, new ViewModelProvider.NewInstanceFactory()).get(MainViewModule.class);
+
+                ViewModule 有独特的生命周期，要长于 Activity
 
 
 
