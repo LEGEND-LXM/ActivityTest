@@ -5,53 +5,84 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
 
 import java.lang.ref.WeakReference;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements OnClickListener {
 
     private UIHandler handler;
-
     private TextView textView;
+    private MainViewModule viewModule;
 
     private static final int UP_DATA_TEXT = 1;
 
+    @SuppressLint("CommitPrefEdits")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        final MainViewModule viewModule = new ViewModelProvider(this, new ViewModelProvider.NewInstanceFactory()).get(MainViewModule.class);
+
+        SharedPreferences sharePf = getSharedPreferences("data", MODE_PRIVATE);
+        int countReserved = sharePf.getInt("count_reserved", 0);
+
+        // 获取 viewModule 实例
+        viewModule = new ViewModelProvider(this, new MainViewModuleFactory(countReserved)).get(MainViewModule.class);
+
+        // 获取控件实例
         Button button = findViewById(R.id.plusOneBtn);
+        Button clearBtn = findViewById(R.id.clearBtn);
         textView = findViewById(R.id.infoText);
 
         handler = new UIHandler(this);
 
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                viewModule.pushOneCounter();
-                Message message = new Message();
-                message.what = UP_DATA_TEXT;
-                message.obj = textView;
-                Log.d("MainActivityTest","MainActivity ID查询"+textView.getId());
-                message.arg1 = viewModule.getCounter();
-                handler.sendMessage(message);
-            }
-        });
+        clearBtn.setOnClickListener(this);
+        button.setOnClickListener(this);
 
-
+        refreshCounter(countReserved);
     }
 
+    /**
+     * 点击事件处理函数
+     * 集成度更高（代码精简）
+     * */
+    public void onClick(View v) {
+        switch(v.getId()) {
+            case R.id.plusOneBtn :  // 实现计数器+1
+                viewModule.pushOneCounter();
+                refreshCounter(viewModule.getCounter());
+                break;
+            case R.id.clearBtn :   // 清除计数
+                viewModule.setCounter(0);
+                refreshCounter(viewModule.getCounter());
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void refreshCounter(int count) {
+        Message message = new Message();
+        message.what = UP_DATA_TEXT;
+        message.obj = textView;
+        message.arg1 = count;
+        handler.sendMessage(message);
+    }
+
+    /**
+     * 内部类，用于实现更新UI
+     * */
     private static class UIHandler extends Handler {
         WeakReference<MainActivity> mWeakRef;
 
@@ -67,14 +98,11 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-
             switch (msg.what) {
                 case UP_DATA_TEXT :
-                    Log.d("MainActivityTest","MainActivity进入处理");
                     TextView textView = (TextView) msg.obj;
                     String str = String.valueOf(msg.arg1);
                     textView.setText(str);
-                    Log.d("MainActivityTest","MainActivity处理完成");
                     break;
                 default:
                     break;
@@ -89,5 +117,14 @@ public class MainActivity extends AppCompatActivity {
             handler.removeCallbacksAndMessages(null);
             handler = null;
         }
+    }
+
+    @SuppressLint("CommitPrefEdits")
+    @Override
+    protected void onPause() {
+        super.onPause();
+        SharedPreferences.Editor editor = getSharedPreferences("data", MODE_PRIVATE).edit();
+        editor.putInt("count_reserved", viewModule.getCounter());
+        editor.apply();
     }
 }

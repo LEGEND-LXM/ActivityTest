@@ -23,5 +23,13 @@
         android:text="plus one"
         tools:ignore="MissingConstraints" />
 
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/clearBtn"
+        android:gravity="center_horizontal"
+        android:text="Clear"
+        tools:ignore="MissingConstraints" />
+
 
 </LinearLayout>

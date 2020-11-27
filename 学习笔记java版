@@ -3704,9 +3704,34 @@ Android学习笔记
                 MainViewModule viewModule = new ViewModelProvider(this, new ViewModelProvider.NewInstanceFactory()).get(MainViewModule.class);
 
                 ViewModule 有独特的生命周期，要长于 Activity
+        3】向 ViewModule 传递参数（代码参考 viewModule ）
+            1）简介 ：利用 ViewModelProvider.Factory 来实现向 ViewModel 的构造函数中传递参数
+            2）简单使用 ：
+                1》创建自定义类继承 ViewModelProvider.Factory 接口，必须实现 create() 接口，示例 :
+                    public  class MainViewModuleFactory implements ViewModelProvider.Factory {
+                    private int countReserved;
+                    public MainViewModuleFactory(int countReserved1) {
+                        countReserved = countReserved1;
+                    }
 
-
-
+                    @NonNull
+                    @Override
+                    public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
+                        try {
+                        // countReserved 为传入的参数，前面的类 int.class 为这个参数的类型（可以传入一个对象）
+                            return modelClass.getConstructor(int.class).newInstance(countReserved);
+                        } catch (IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
+                            e.printStackTrace();
+                        }
+                        return null;
+                    }
+                }
+                2》在获取 ViewModel 对象时借助自定义 ViewModelProvider.Factory 将参数传入
+                    // 获取 viewModule 实例
+                    viewModule = new ViewModelProvider(this, new MainViewModuleFactory(countReserved)).get(MainViewModule.class);
+                    // 传入参数部分
+                    //new MainViewModuleFactory(countReserved)
+                3》保存数据的部分参考 SharedPreferences 章节
 
 
 
