@@ -2,6 +2,7 @@ package com.example.viewmodule;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -50,6 +51,16 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         clearBtn.setOnClickListener(this);
         button.setOnClickListener(this);
 
+        viewModule.getCount().observe(this, new Observer<Integer>() {
+            @Override
+            public void onChanged(Integer integer) {
+                // 在此处来对数据的变化做出响应
+                // 更新UI
+                refreshCounter(integer);
+                Log.d("MainActivityTest", "changed:"+integer);
+            }
+        });
+
         refreshCounter(countReserved);
     }
 
@@ -61,11 +72,13 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         switch(v.getId()) {
             case R.id.plusOneBtn :  // 实现计数器+1
                 viewModule.pushOneCounter();
-                refreshCounter(viewModule.getCounter());
+                // refreshCounter(viewModule.getCounter());
                 break;
             case R.id.clearBtn :   // 清除计数
-                viewModule.setCounter(0);
-                refreshCounter(viewModule.getCounter());
+                // viewModule板块学习
+                //viewModule.setCounter(0);
+                viewModule.clearCountValue();
+                // refreshCounter(viewModule.getCounter());
                 break;
             default:
                 break;

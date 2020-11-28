@@ -3766,20 +3766,35 @@ Android学习笔记
                 }
         }
 
-        状态           INITIALIZED             DESTROYED           CREATED            STARTED         RESUMED
-                            |                      |                 |                   |              |
-                            |       ON_CREATE      |                 |      ON_START     |  ON_RESUMED  |
-                            |_______________________________________>|__________________>|_____________>|
-        事件                |                      |    ON_DESTROY   |      ON_STOP      |   ON_PAUSE   |
-                            |                      |<________________|<__________________|<_____________|
-                            |                      |                 |                   |              |
-                            |                      |                 |                   |              |
-        状态           INITIALIZED             DESTROYED           CREATED            STARTED         RESUMED
+            状态           INITIALIZED             DESTROYED           CREATED            STARTED         RESUMED
+                                |                      |                 |                   |              |
+                                |       ON_CREATE      |                 |      ON_START     |  ON_RESUMED  |
+                                |_______________________________________>|__________________>|_____________>|
+            事件                |                      |    ON_DESTROY   |      ON_STOP      |   ON_PAUSE   |
+                                |                      |<________________|<__________________|<_____________|
+                                |                      |                 |                   |              |
+                                |                      |                 |                   |              |
+            状态           INITIALIZED             DESTROYED           CREATED            STARTED         RESUMED
 
-        CREATED : 表示执行完 onCreate 方法，但是没有执行 onStart 方法
+            CREATED : 表示执行完 onCreate 方法，但是没有执行 onStart 方法
+    4、LiveData（代码参考 viewmodule（module））
+        1】简介 ：LiveData 是 Jetpack 提供的一种响应式编程组件，可以包含任意类型的数据类型，并在数据发生变化时通知给观察者，一般与 ViewModel 连用
+        2】LiveData 基本用法 ：
+            *说明：在 ViewModel 板块的学习中，Activity 只能主动获取 count 的值， ViewModel 无法主动在 count 发生改变时通知 Activity，如果 ViewModel
+                中开启子线程进行逻辑处理，获取的值可能是原来的值，新的值可能不能被及时获取。可以使用 LiveData 包装数据，然后当他更新后及时通知到监听器。
+            1）定义一个 MutableLiveData 对象，这个对象可以保存数据（任意类型），用于在值变化时通知监听器做出响应。
+                示例 ：private MutableLiveData<Integer> count = new MutableLiveData<>();  在前面的类型声明保存的数据类型（此处为 Integer-整形）
+                *关于 MutableLiveData 说明 ：
+                    1》MutableLiveData 是一种可变的 LiveData
+                    2》有三种读写数据的方法 ：
+                        ① getValue() : 获取数据
+                        ② setValue() ： 在主线程中保存数值
+                        ③ postValue() ：在非主线程保存数据
+            2）任何 LiveData 对象都可以调用 observe() 方法来观察数据的变化。observe() 需要传入两个参数 ：
+                参数一 ：LifecycleOwner 对象，Activity 本身就是一个 LifecycleOwner 对象，因此传入 this 即可
+                参数二 ：一个 Observe 接口，当 count 中的数据发生变化时，就会回调到这里
 
-
-
+                在此处完成对数据变化的响应，示例：
 
 
 
