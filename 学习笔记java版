@@ -3732,13 +3732,51 @@ Android学习笔记
                     // 传入参数部分
                     //new MainViewModuleFactory(countReserved)
                 3》保存数据的部分参考 SharedPreferences 章节
+    3、LifeCycles
+        1）简介 ： LifeCycles 组件用于让任何类都能轻松感知到 Activity 的生命周期，不需要在 Activity 编写大量程序逻辑
+        2）简单使用 ：
+            @观察者实现LifecycleObserver
+            1》新建一个类 MyObserver 继承 LifecycleObserver 接口（代码参考 lifecycle -> MyObserver.java）
+               *说明1 ：LifecycleObserver 是一个空方法接口，感知 Activity 的生命周期需要定义方法去实现
+               *说明2 ：@OnLifecycleEvent() 注解，参数为生命周期事件。生命周期的类型总共有七种 ：
+                    ON_CREATE : 在 onCreate 触发时执行
+                    ON_START : 在 onStart 触发时执行
+                    ON_RESUME : 在 onResume 触发时执行
+                    ON_PAUSE : 在 onPause 触发时执行
+                    ON_STOP : 在 onStop 触发时执行
+                    ON_DESTROY : 在 onDestroy 触发时执行
+                    ON_ANY : 在 Activity 所有生命周期触发时执行
+            @生命周期拥有者
+            2》MyObserver.java 中的代码目前还不会有响应，我们需要借助 LifecycleObserver 来让它工作
+                语法 ：
+                    ① 调用  getLifecycle() 方法获取 Lifecycle 对象
+                    ② 调用 Lifecycle 对象的 addObserve() 方法观察 Activity 的生命周期，需要传入自定义 LifeCycles 的实例
+                    示例 ： getLifecycle().addObserver(new MyObserver());
+        3）简单用法中只能在调用 Activity（或Fragment）的生命周期，我们可以在构造自定义 LifeCycles 实例时传入
+         LifeCycles 实例实现主动获取生命周期，优点 ：
+            1》所有方法调用操作都由组件本身管理：MyObserver 类自动感知生命周期，如果需要在其他的Activity/Fragment也使用这个 MyObserver，只需添加其为观察者即可。
+            2》让各个组件存储自己的逻辑，减轻Activity/Fragment中代码，更易于管理。
 
+            @OnLifecycleEvent(Lifecycle.Event.ON_START)
+            private void activityStart(LifecycleOwner owner) {
+                // 获取并判断 Activity 的状态（owner.getLifecycle().getCurrentState()）
+                // 返回值对应 ：INITIALIZED 、 DESTROYED 、 CREATED 、 STARTED 、 RESUMED
+                if (owner.getLifecycle().getCurrentState() == State.STARTED) {
+                    Log.d("MyObserverTest", "activityStart");
+                }
+        }
 
+        状态           INITIALIZED             DESTROYED           CREATED            STARTED         RESUMED
+                            |                      |                 |                   |              |
+                            |       ON_CREATE      |                 |      ON_START     |  ON_RESUMED  |
+                            |_______________________________________>|__________________>|_____________>|
+        事件                |                      |    ON_DESTROY   |      ON_STOP      |   ON_PAUSE   |
+                            |                      |<________________|<__________________|<_____________|
+                            |                      |                 |                   |              |
+                            |                      |                 |                   |              |
+        状态           INITIALIZED             DESTROYED           CREATED            STARTED         RESUMED
 
-
-
-
-
+        CREATED : 表示执行完 onCreate 方法，但是没有执行 onStart 方法
 
 
 

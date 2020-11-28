@@ -1,3 +1,4 @@
+include ':lifecycler'
 include ':viewmodule'
 include ':cardview'
 include ':cardview3'

@@ -25,6 +25,7 @@
             <option value="$PROJECT_DIR$/database" />
             <option value="$PROJECT_DIR$/drawerlayout" />
             <option value="$PROJECT_DIR$/filepersistence" />
+            <option value="$PROJECT_DIR$/lifecycler" />
             <option value="$PROJECT_DIR$/litepal" />
             <option value="$PROJECT_DIR$/myapplication" />
             <option value="$PROJECT_DIR$/navigationview" />
