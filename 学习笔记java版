@@ -3795,7 +3795,15 @@ Android学习笔记
                 参数二 ：一个 Observe 接口，当 count 中的数据发生变化时，就会回调到这里
 
                 在此处完成对数据变化的响应，示例：
-
+                    viewModule.getCount().observe(this, new Observer<Integer>() {
+                        @Override
+                        public void onChanged(Integer integer) {
+                            // 在此处来对数据的变化做出响应
+                            // 更新UI
+                            refreshCounter(integer);
+                            Log.d("MainActivityTest", "changed:"+integer);
+                        }
+                    });
 
 
 
