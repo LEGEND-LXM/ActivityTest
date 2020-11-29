@@ -61,6 +61,20 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             }
         });
 
+        viewModule.getCounter().observe(this, new Observer<String>() {
+            @Override
+            public void onChanged(String s) {
+                Log.d("MainActivityTest", "changed(getCounter):"+s);
+            }
+        });
+
+        viewModule.getCountSwitchMap().observe(this, new Observer<String>() {
+            @Override
+            public void onChanged(String s) {
+                Log.d("MainActivityTest", "changed(getCountSwitchMap):"+s);
+            }
+        });
+
         refreshCounter(countReserved);
     }
 
@@ -137,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     protected void onPause() {
         super.onPause();
         SharedPreferences.Editor editor = getSharedPreferences("data", MODE_PRIVATE).edit();
-        editor.putInt("count_reserved", viewModule.getCounter());
+        editor.putInt("count_reserved", viewModule.getCounterValue());
         editor.apply();
     }
 }

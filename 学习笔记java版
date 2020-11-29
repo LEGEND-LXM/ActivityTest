@@ -3804,11 +3804,57 @@ Android学习笔记
                             Log.d("MainActivityTest", "changed:"+integer);
                         }
                     });
+        3】map 和 switchMap
+            1）简介 ：map 和 switchMap 用于在不同的场景中对 LiveData 进行转换
+            2）map ：
+                1》简介 ：map 用于将实际包含数据的 LiveData 和仅用于观察数据的 LiveData 进行转换，即：
+                    map() 可以将已确定数据类型的 LiveData 对象转变为任意数据类型的 LiveData 对象。
+                2》简单使用 ：
+                    1- 语法 ：
+                        private  MutableLiveData<Type1> counter = (MutableLiveData<Type1>) Transformations.map(LiveData<Type2>对象,
+                         new Function<Type2, Type1>() {
+                            @Override
+                            public Type1 apply(Type2 Type2Value) {
+                                // 返回String
+                                return input.toString();
+                            }
+                        });
+                    2- 示例 ：
+                        private  MutableLiveData<String> counter = (MutableLiveData<String>) Transformations.map(count,
+                         new Function<Integer, String>() {
+                            @Override
+                            public String apply(Integer input) {
+                                // 返回String
+                                return input.toString();
+                            }
+                        });
+                3》map() 函数运行逻辑 （以上述事例为例）：当 count 发生变化时，map 会监测到变化并执行转换函数中的逻辑，然后
+                 将转换之后的数据通知给 counter 的观察者。
+            3）stitchMap ：
+                1》简介 ：前面的关于 LiveData 的学习都是建立在 LiveData 对象在 ViewModel 中创建的，switchMap() 方法用于将
+                    通过另外方法获取的 LiveData 对象(可能每次获取的对象都不相同)转变为另外一个可观察的 LiveData 对象。
+                2》简单使用 ：
+                    1- 语法 ：注意一定要确定数据类型，不能采用未知类型 : LiveData<？ extends Objects>
+                        private final MutableLiveData<Type1> countSwitchMap = (MutableLiveData<Type1>) Transformations
+                                .switchMap(MutableLiveData<Type2>实例, new Function<Type2, LiveData<Type1>>() {
+                                    @Override
+                                    public LiveData<Type1> apply(Type2 Type2Value) {
+                                        MutableLiveData<Type2> stringMutableLiveData = new Repository().getString(Type2Value.Type1);
+                                        return stringMutableLiveData;
+                                    }
+                                });
+                    2- 示例 ：
+                        private final MutableLiveData<String> countSwitchMap = (MutableLiveData<String>) Transformations
+                                .switchMap(count, new Function<Integer, LiveData<String>>() {
+                                    @Override
+                                    public LiveData<String> apply(Integer input) {
+                                        MutableLiveData<String> stringMutableLiveData = new Repository().getString(input.toString());
+                                        return stringMutableLiveData;
+                                    }
+                                });
 
-
-
-
-
+                3》stitchMap() 函数运行逻辑（以上述事例为例）： 当外部调用 Repository().getString(input.toString()) 方法时不会出发观测回调动作，只有当
+                count 的值发生改变时， switchMap 会响应并执行数据转换逻辑然后触发 countSwitchMap 观测执行逻辑代码。
 
 
 
