@@ -3932,6 +3932,11 @@ Android学习笔记
                         int deleteUserByLastName(String lastName);                  // 使用非实体类参数来增删改数据时，都需要使用@Query注解
 
                     }
+                4》定义Database（实现 Database 部分） ：格式比较固定，需要定义
+                    ①数据库版本号
+                    ②包含的实体类
+                    ③提供Dao层的访问实例
+
 
 
 

@@ -82,6 +82,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
      * 点击事件处理函数
      * 集成度更高（代码精简）
      * */
+    @SuppressLint("NonConstantResourceId")
     public void onClick(View v) {
         switch(v.getId()) {
             case R.id.plusOneBtn :  // 实现计数器+1
