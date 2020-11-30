@@ -22,6 +22,7 @@ public class MainViewModule extends ViewModel {
         }
     });
 
+
     private final MutableLiveData<String> countSwitchMap = (MutableLiveData<String>) Transformations
             .switchMap(count, new Function<Integer, LiveData<String>>() {
                 @Override
@@ -30,7 +31,6 @@ public class MainViewModule extends ViewModel {
                     return stringMutableLiveData;
                 }
             });
-
     public MainViewModule(int countReserved) {
         getCount().setValue(countReserved);
     }
