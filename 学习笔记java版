@@ -3876,36 +3876,27 @@ Android学习笔记
 
                     @Entity(tableName = "users")     // 申明为实体类，指定数据表名
                     public class User {
-
                         @PrimaryKey(autoGenerate = true)    // 设置为主键，自动生成
-                        @ColumnInfo(name = "userid")
-                        private final long id = 0;
+                        @ColumnInfo(name = "userId")        // 指定列名称
+                        public int id;                      // 注意，当属性指定为 private 时需要创建对应的get 、set 方法
 
                         @ColumnInfo(name = "firstName")
-                        private String firstName;
+                        public String firstName;
 
                         @ColumnInfo(name = "lastName")
-                        private String lastName;
+                        public String lastName;
 
                         @ColumnInfo(name = "age")
-                        private int age ;
+                        public int age ;
 
-                        @ColumnInfo(name = "last_update")
-                        private Date mDate;
-
-                        @Ignore
-                        public User(String _firstName) {
-                            this.firstName = _firstName;
-                        }
-
-                        public User(String _firstName, String _lastName, int _age, Date _mDate) {
-                            this.firstName = _firstName;
-                            this.lastName = _lastName;
-                            this.age = _age;
-                            this.mDate = _mDate;
-
+                        // 初始化中不能出现 _firstName 带下划线的变量（有特殊含义）
+                        public User( String firstName, String lastName, int age) {
+                            this.firstName = firstName;
+                            this.lastName = lastName;
+                            this.age = age;
                         }
                     }
+
                 3》实现 Dao 部分（接口）-- 代码参考 UserDao
 
                     DAO负责定义访问数据库数据的方法，开发人员只需要声明一个由@Dao注解的接口即可，并在其中声明各方法，然后给方法添加相应的sql注解
@@ -3914,29 +3905,79 @@ Android学习笔记
                     public interface UserDao {
 
                         @Insert     // 插入数据返回主键ID
-                        Long insertUser(User user);
+                        void insertAllUser(User... users);
 
                         @Update     // 将数据传入更新数据库
                         void updateUser(User newUser);
 
-                        @Query("select * from users")       // 查找所有数据
+                        @Delete     // 删除传入对象的数据
+                        void deleteUser(User... user);
+
+                        @Query("SELECT * FROM users")       // 查找所有数据   from 后接的是表名称
                         List<User> loadAllUsers();
 
                         @Query("select * from users where age > :age")      // 查找年龄大于age的数据
                         List<User> loadUsersOlderThan(int age);
 
-                        @Delete     // 删除传入对象的数据
-                        void deleteUser(User user);
-
                         @Query("delete from users where lastName = :lastName")      // 删除指定lastName列数据
-                        int deleteUserByLastName(String lastName);                  // 使用非实体类参数来增删改数据时，都需要使用@Query注解
+                        void deleteUserByLastName(String lastName);                  // 使用非实体类参数来增删改数据时，都需要使用@Query注解
+
+                        @Query("DELETE FROM users")
+                        void deleteAll();
+
+                        @Query("SELECT * FROM USERS WHERE userId = :id")
+                        User selectIdUser(int id);
 
                     }
                 4》定义Database（实现 Database 部分） ：格式比较固定，需要定义
                     ①数据库版本号
                     ②包含的实体类
                     ③提供Dao层的访问实例
+                                        /*包含的实体类*//*数据库版本号*/
+                    @Database(entities = {User.class}, version = 1, exportSchema = false)  // 指定版本号和数据表数据类型
+                    public abstract class AppDatabase extends RoomDatabase {
+                        public abstract UserDao userDao();  // 提供Dao层的访问实例
+                    }
+                5》逻辑代码部分（对数据库进行操作）
 
+                    ① 声明相关变量 ：
+                        private AppDatabase appDatabase;
+                        【*】// 注意接口必须是 public 类型
+                        public UserDao userDao;
+                    ② 进行初始化（创建以及获取） ：
+                        appDatabase = Room.databaseBuilder(this, AppDatabase.class, "users_db")  // 创建实例
+                                .allowMainThreadQueries()
+                                .build();
+                        userDao = appDatabase.userDao();  // 获取实例
+                    ③ 对数据库进行操作 ：
+                        调用 userDao 对象的相关方法进行数据的 增 删 改 查（下列代码中有相关操作）
+                        switch(v.getId()) {
+                                    case R.id.addUserBtn : {
+                                        User user1 = new User("Tom", "Brady", 40);
+                                        User user2 = new User("Tom", "Hanks", 65);
+                                        userDao.insertAllUser(user1, user2);    // 添加数据（添加之后数据库中的的id会自动添加，但是临时对象
+                                                                                //（user1、user2）的ID并不会自动补上 ）
+                                        break;
+                                    }
+                                    case R.id.updateUserBtn : {
+                                        User user = userDao.selectIdUser(1);  // 获取id=1的行
+                                        if (user != null) {
+                                            user.age = 42;  // 更改年龄
+                                            userDao.updateUser(user);   // 更新数据行
+                                        }
+                                        break;
+                                    }
+                                    case R.id.deleteUserBtn : {
+                                        userDao.deleteUserByLastName("Hanks");  // 删除lastName为 "Hanks" 的数据行
+                                        break;
+                                    }
+                                    case R.id.queryUserBtn : {
+                                        for (User user3 : userDao.loadAllUsers()) {     // 获取所有数据
+                                            Log.d("MainActivityTest", ""+ user3.id + "," +user3.firstName + ",=" + user3.lastName + ","+ user3.age );
+                                        }
+                                        break;
+                                    }
+                                }
 
 
 
