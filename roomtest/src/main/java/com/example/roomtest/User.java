@@ -5,53 +5,52 @@ import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
-@Entity
-public class User {
-    @PrimaryKey(autoGenerate = true)    // 设置为主键，自动生成
-    public int id;
-
-    @ColumnInfo(name = "user_name")
-    public String userName;
-
-    @ColumnInfo(name = "password")
-    public String passWord;
-
-    public User(String userName, String passWord) {
-        this.userName = userName;
-        this.passWord = passWord;
-    }
-}
-
-
-//@Entity //(tableName = "users")     // 申明为实体类，指定数据表名
+//@Entity
 //public class User {
 //    @PrimaryKey(autoGenerate = true)    // 设置为主键，自动生成
-//    @ColumnInfo(name = "nameId")
-//    private long id = 0;
+//    public int id;
 //
-//    @ColumnInfo(name = "firstName")
-//    private String firstName;
+//    @ColumnInfo(name = "user_name")
+//    public String userName;
 //
-//    @ColumnInfo(name = "lastName")
-//    private String lastName;
+//    @ColumnInfo(name = "password")
+//    public String passWord;
 //
-//    @ColumnInfo(name = "age")
-//    private int age ;
+//    public User(String userName, String passWord) {
+//        this.userName = userName;
+//        this.passWord = passWord;
+//    }
+//}
 
-//    @Ignore
-//    public User(String _firstName) {
-//        this.firstName = _firstName;
-//    }
-//
-//    public User( String _firstName, String _lastName, int _age) {
-////        this.id = _id;
-//        this.firstName = _firstName;
-//        this.lastName = _lastName;
-//        this.age = _age;
-//
-//    }
-//
-//    public void setId(long id) {
+
+@Entity(tableName = "users")     // 申明为实体类，指定数据表名
+public class User {
+    @PrimaryKey(autoGenerate = true)    // 设置为主键，自动生成
+    @ColumnInfo(name = "userId")
+    public int id;
+
+    @ColumnInfo(name = "firstName")
+    public String firstName;
+
+    @ColumnInfo(name = "lastName")
+    public String lastName;
+
+    @ColumnInfo(name = "age")
+    public int age ;
+
+    @Ignore
+    public User(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public User( String firstName, String lastName, int age) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.age = age;
+
+    }
+
+//    public void setId(int id) {
 //        this.id = id;
 //    }
 //
@@ -59,12 +58,12 @@ public class User {
 //        return id;
 //    }
 //
-//    public void setAge(int age) {
-//        this.age = age;
+//    public void setLastName(String lastName) {
+//        this.lastName = lastName;
 //    }
 //
-//    public int getAge() {
-//        return age;
+//    public String getLastName() {
+//        return lastName;
 //    }
 //
 //    public void setFirstName(String firstName) {
@@ -75,11 +74,11 @@ public class User {
 //        return firstName;
 //    }
 //
-//    public void setLastName(String lastName) {
-//        this.lastName = lastName;
+//    public void setAge(int age) {
+//        this.age = age;
 //    }
 //
-//    public String getLastName() {
-//        return lastName;
+//    public int getAge() {
+//        return age;
 //    }
-//}
+}
