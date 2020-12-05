@@ -18,6 +18,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
     private AppDatabase appDatabase;
     public UserDao userDao;     // 注意接口必须是 public 类型
+    public BookDao bookDao;     // 注意接口必须是 public 类型
 
     private TextView textView;
 
@@ -26,10 +27,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        appDatabase = Room.databaseBuilder(this, AppDatabase.class, "users_db")
-                .allowMainThreadQueries()
-                .build();
+        appDatabase = AppDatabase.getDatabase(this);
         userDao = appDatabase.userDao();
+        bookDao = appDatabase.bookDao();
 
         Button getBtn = findViewById(R.id.getUserBtn);
         Button addBtn = findViewById(R.id.addUserBtn);
@@ -55,6 +55,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 User user2 = new User("Tom", "Hanks", 65);
                 userDao.insertAllUser(user1, user2);    // 添加数据（添加之后数据库中的的id会自动添加，但是临时对象
                                                         //（user1、user2）的ID并不会自动补上 ）
+                Book book1 = new Book("你的名字", 524, "新海诚");
+                bookDao.interBooks(book1);
                 break;
             }
             case R.id.updateUserBtn : {
@@ -74,6 +76,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             case R.id.queryUserBtn : {
                 for (User user3 : userDao.loadAllUsers()) {     // 获取所有数据
                     Log.d("MainActivityTest", ""+ user3.id + "," +user3.firstName + ",=" + user3.lastName + ","+ user3.age );
+                }
+                for (Book book : bookDao.getAllBook()) {     // 获取所有数据
+                    Log.d("MainActivityTest", ""+ book.id + "," + book.bookName + "," + book.pages + "," + book.author);
                 }
                 break;
             }

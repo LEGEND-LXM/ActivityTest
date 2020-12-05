@@ -1038,12 +1038,12 @@ Android学习笔记
                     //创建数据库语法id(主键)、作者、价格、页数、书名
                     //primary key ：主键
                     //autoincrement ：自增长
-                    public static final String CREATE_BOOK = "create table Book (" +
-                            "id integer primary key autoincrement, " +
-                            "author text, " +
-                            "price real, " +
-                            "pages integer, " +
-                            "name text)";
+                    public static final String CREATE_BOOK = "create table Book ("
+                        +"id integer primary key autoincrement, "
+                        +"author text, "
+                        +"price real, "
+                        +"pages integer, "
+                        +"name text)";
                 2-- 执行数据库创建语法 ：execSQL()方法
                     public void onCreate(SQLiteDatabase db) {
                         db.execSQL(CREATE_BOOK);
@@ -3978,13 +3978,97 @@ Android学习笔记
                                         break;
                                     }
                                 }
+            3、Room 数据库的升级
+                1】测试阶段的更新方法 ：（不建议使用）
+                    appDatabase = Room.databaseBuilder(this, AppDatabase.class, "users_db")
+                            .fallbackToDestructiveMigration()  // 在创建时加入这一方法
+                            .allowMainThreadQueries()
+                            .build();
+                    使用 fallbackToDestructiveMigration() 表示将之前的数据库（包含数据）直接销毁，然后重新创建
+                2】在原有数据库基础上添加更新的数据
+                （以添加数据表为例）
+                    1）先按照上一小节先定义  @Entity 和 @Dao 部分
+                    @Entity (tableName = "books")
+                    public class Book {
+
+                        @PrimaryKey(autoGenerate = true)
+                        @ColumnInfo(name = "id")
+                        public int id;
+
+                        @ColumnInfo(name = "bookName")
+                        public String bookName;
+
+                        @ColumnInfo(name = "pages")
+                        public int pages;
 
 
+                        @ColumnInfo(name = "author")
+                        public String author;
 
+                        public Book(String bookName, int pages, String author) {
+                            this.bookName = bookName;
+                            this.pages = pages;
+                            this.author = author;
+                        }
 
+                    }
 
+                    @Dao
+                    public interface BookDao {
 
+                        @Insert
+                        void interBooks(Book book);
 
+                        @Delete
+                        void deleteBooks(Book... book);
+
+                        @Update
+                        void updateBook(Book newBook);
+
+                        @Query("select * from books")
+                        List<Book> getAllBook();
+
+                        @Query("select * from books where id = :id")
+                        Book getIdBook(int id);
+                    }
+                2）添加 Migration 语句，用来实现数据库升级操作（在 Database 部分实现）
+                    参数 1 ：数据库升级操作起始版本
+                    参数 2 ：数据库升级操作目标版本
+                    // 数据库版本 1->2
+                    static Migration MIGRATION_1_n = new Migration(1, 2) {
+                        @Override
+                        public void migrate(@NonNull SupportSQLiteDatabase database) {
+                            //  添加新的表
+                            database.execSQL("create table books ("     // books 为新建表表名称
+                                    +"id integer primary key autoincrement not null,"       // id 为组件
+                                    +"bookName text not null,"                              // bookName 为 String 类型的数据列
+                                    +"pages integer not null default 0,"        【*】注意 ：表中的 int 型变量必须有默认值，不然会报错
+                                    +"author text not null)");
+                        }
+                    };
+                    【*】注意 ：表中的 int 型变量必须有默认值，不然会报错
+
+                3）修改 @Database 标签内容
+                    修改前 ：@Database(entities = {User.class}, version = 1, exportSchema = false)  // 指定版本号和数据表数据类型
+                    修改后 ：@Database(entities = {User.class, Book.class}, version = 2, exportSchema = false)  // 指定版本号和数据表数据类型
+
+                    需要将新增的表的 java 类加入进去，数据库版本也需要更新。
+
+                4）创建数据库操作接口
+                    public abstract BookDao bookDao();
+
+                5）最后在创建数据库对象时使用 addMigrations 方法来传入 Migration 语句，例如 ：
+                    private static AppDatabase createDatabase(Context context) {
+                        return Room.databaseBuilder(context, AppDatabase.class, DB_NAME)
+                                .addMigrations(MIGRATION_1_n)  // 可以传入多个 Migration 语句
+                                .allowMainThreadQueries()
+                                .build();
+                    }
+                6）数据库升级逻辑
+                    在进行 Room 数据库升级操作时，首先获取最新的数据库版本，然后与自身版本进行比较，然后根据版本差执行对应的
+                  Migration 语句来完成数据库的更新迁移。
+                    注意：当需要改变数据库中某一列数据类型但不希望数据丢失的话，需要先新建一个临时数据库将原有数据复制过去，
+                  然后删除原有数据表，将这个临时表更名为原数据表名
 
 
 
