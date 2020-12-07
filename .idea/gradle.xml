@@ -42,6 +42,7 @@
             <option value="$PROJECT_DIR$/toolbar" />
             <option value="$PROJECT_DIR$/viewmodule" />
             <option value="$PROJECT_DIR$/webviewtest" />
+            <option value="$PROJECT_DIR$/workmanagertest" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

@@ -4070,9 +4070,109 @@ Android学习笔记
                     注意：当需要改变数据库中某一列数据类型但不希望数据丢失的话，需要先新建一个临时数据库将原有数据复制过去，
                   然后删除原有数据表，将这个临时表更名为原数据表名
 
+    6、WorkManager
+        1】简介 ：WorkManager 用于处理定时任务，他可以根据系统版本自行选择实现方式，WorkManager 和 Service 没有直接联系。
+            Service ：它在没有被销毁的情况下一直保持后台运行状态。
+            WorkManager ：处理定时任务的工具，它可以保证即使应用退出甚至手机重启的情况下也会执行之前注册的任务，WorkManager
+                适合执行一些定期和服务器进行交互的任务，例如周情性同步。
+        【*】WorkManager 注册的周期性任务不能保证一定会准时执行，系统为了减少电量消耗，可能将事件触发临近的多个任务放在一起执行，
+            这样可以减少CPU被唤醒的次数，有效延长电池使用时长。
+        2】基本用法 ：
+            1）第一步先添加所需的依赖 ：
+                implementation 'androidx.work:work-runtime:2.4.0'
+            2）定义后台任务，实现具体的任务逻辑
+                1》新建一个 java 类继承 Worker，添加构造方法以及重写 doWork() 方法，
+                public class SimpleWorker extends Worker {
+                    public SimpleWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+                        super(context, workerParams);
+                    }
+                    @NonNull
+                    @Override
+                    public Result doWork() {
+                        Log.d("SimpleWorkerTest", "do work in SimpleWorker");
+                        // 返回值 Result.success() 表示成功执行
+                        return Result.success();
+                    }
+                }
 
+                doWork() 方法不会运行在主线程中去，因此可以进行耗时操作。它执行结束后要求返回一个 Result 参数。
+                Result.succeed() ：成功执行
+                Result.failure() ：执行失败
+                Result.retry()   ：代表执行失败，但是可以结合 WorkRequest.Builder 的 setBackoffCriteria() 方法来重新执行任务
 
+            3）配置该后台任务的运行条件和约束信息，并构建后台任务请求
+                1》创建 WorkRequest 实例，将 后台任务对应的java类 传入到 WorkRequest.Builder 构造函数中，然后
+                 调用 build() 函数即可。
+                 OneTimeWorkRequest requset = new OneTimeWorkRequest.Builder(SimpleWorker.class).build();
+                 WorkRequest.Builder 有两个子类 ：
+                    OneTimeWorkRequest.Builder : 用于构建单次运行的后台任务请求。
+                    PeriodicWorkRequeue.Builder : 用于构建周期性运行的后台任务请求，为了降低设备性能消耗，运行时间间隔不能小于15分钟。
 
+            4）将该任务请求传递给 WorkManager 的enqueue 方法，系统会在合适的时间来执行
+                WorkManager.getInstance(getBaseContext()).enqueue(requset);
+        3】使用 WorkManager 处理复杂的任务
+            1》延迟一段时间触发 ：在创建时 调用setInitialDelay 方法来进行延迟
+                OneTimeWorkRequest requset = new OneTimeWorkRequest.Builder(SimpleWorker.class)
+                        .setInitialDelay(5, TimeUnit.SECONDS)       // 延迟5s之后执行
+                        .build();
+                TimeUnit.DAYS : 天
+                TimeUnit.HOURS : 小时
+                TimeUnit.MINUTES : 分钟
+                TimeUnit.SECONDS : 秒
+                TimeUnit.MILLISECONDS : 毫秒
+                TimeUnit.MICROSECONDS : 微秒
+                TimeUnit.NANOSECONDS  : 纳秒
+            2》给后台任务请求添加标签 ：可以用来取消后台请求，.addTag("第一")
+                OneTimeWorkRequest requset = new OneTimeWorkRequest.Builder(SimpleWorker.class)
+                    .addTag("第一")           // 添加标签
+                    .setInitialDelay(5, TimeUnit.SECONDS)       // 延迟5s之后执行
+                    .build();
+            3》取消后台请求 ：
+                ① 利用标签 ：取消所有标签为 "第一" 的后台请求
+                    WorkManager.getInstance(getBaseContext()).cancelAllWorkByTag("第一");
+                ② 利用id : 利用 requset 的id取消它
+                    WorkManager.getInstance(getBaseContext()).cancelWorkById(requset.getId());
+                ③ 取消所有请求
+                    WorkManager.getInstance(getBaseContext()).cancelAllWork();
+            4》利用 setBackoffCriteria() 集合 Result.retry()  来实现重新执行任务
+                OneTimeWorkRequest requset = new OneTimeWorkRequest.Builder(SimpleWorker.class)
+                        ...
+                        .setBackoffCriteria(BackoffPolicy.LINEAR, 10, TimeUnit.SECONDS)
+                        .build();
+                参数一 ：失败次数越多，重试的延迟时间越长，可选参数 LINEAR（线性增加） 、EXPONENTIAL（指数增加）
+                参数二 ：指定延迟时长（数字）
+                参数三 ：指定延迟时长单位
+
+            5》监听后台任务的运行结果
+                ① 通过id来监听 getWorkInfoByIdLiveData()
+                    WorkManager.getInstance(getBaseContext())
+                            .getWorkInfoByIdLiveData(requset.getId())
+                            .observe((LifecycleOwner) getBaseContext(), new Observer<WorkInfo>() {
+                                @Override
+                                public void onChanged(WorkInfo workInfo) {
+                                    switch(workInfo.getState()) {
+                                        case SUCCEEDED:     // 监听 Result.succeed() 信号
+                                            Log.d("MainActivityTest", "do work succeed!");
+                                            break;
+                                        case FAILED:        // 监听 Result.failure() 信号
+                                            Log.d("MainActivityTest", "do work failed!");
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                }
+                            });
+                    通过 workInfo.getState() 来获取信号，然后执行相应的逻辑。
+                ② 传入标签监听 getWorkInfosByTagLiveData()
+            6》链式任务 ：
+                WorkManager.getInstance(getBaseContext())
+                    .beginWith()        // 开启一个链式任务
+                    .then()
+                    .then()
+                    ...
+
+                在执行完 beginWith() 之后，会一个个 then() 开始执行，必须在前一个任务执行成功后，才会执行下一个任务，
+              当上一个任务执行失败，后面的任务不会继续执行。
 
 
 
