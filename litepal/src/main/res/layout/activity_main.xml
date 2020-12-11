@@ -4,13 +4,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity"
+    android:background="?android:attr/colorBackground">
 
     <Button
         android:id="@+id/create_database"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="create database"/>
+        android:text="create database"
+        android:textColor="?android:attr/textColorPrimary"/>
 
     <Button
         android:id="@+id/add_data"

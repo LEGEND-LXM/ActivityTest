@@ -4174,8 +4174,241 @@ Android学习笔记
                 在执行完 beginWith() 之后，会一个个 then() 开始执行，必须在前一个任务执行成功后，才会执行下一个任务，
               当上一个任务执行失败，后面的任务不会继续执行。
 
+十四、Android 高级技巧（代码位于 advancedskill（moudle））
+    1、全局获取 Context（代码位于 advancedskill（moudle）-> MyApplication.java）
+        1】简介 ：程序中部分逻辑代码可能不在 Activity 中，但是他会需要Context对象，此时获取 Context 对象就成了一个问题；
+            Android 提供了一个 Application 类，当程序启动时，会初始化这个类，我们可以定制一个 Application 类，便于管理
+            程序内的一些全局信息，
+        2】使用方式 ：
+            1）创建一个 MyApplication java类继承 Application ，然后编写相关逻辑代码（此处只获取 Context 对象）
+                public class MyApplication extends Application {
+                    @SuppressWarnings("StaticFieldLeak")    // 忽略静态变量内存泄漏警告
+                    private static Context context;
 
+                    @Override
+                    public void onCreate() {
+                        super.onCreate();
+                        this.context = getApplicationContext();
+                    }
 
+                    public static Context getContext() {
+                        return context;
+                    }
+                }
+            2）将自定义的 MyApplication 类设置为系统初始化类，取代默认的 Application 类
+                在 AndroidManifest.xml 文件中的 <application> 标签下进行指定就好
+                <application
+                        android:name=".MyApplication"
+                        ...
+                        >
+    2、使用 Intent 传递对象（代码位于 advancedskill（module）-> person.java）
+        1】Serializable 方式
+            1）简介 ：Serializable 是序列化的意思，表示将一个对象转换成可存储或可传输的状态。序列化后的对象可
+                以在网络上进行传输，也可以存储到本地。
+            2）使用方法 ：
+                1》创建所需要的类实现 Serializable 接口(这个类实例化对象用于保存信息，可以被intent传输)
+                    public class person implements Serializable {
+                        private String name;
+                        private int age;
+
+                        public person(String name, int age) {
+                            this.age = age;
+                            this.name = name;
+                        }
+
+                        public int getAge() {
+                            return age;
+                        }
+
+                        public void setAge(int age) {
+                            this.age = age;
+                        }
+
+                        public String getName() {
+                            return name;
+                        }
+
+                        public void setName(String name) {
+                            this.name = name;
+                        }
+                    }
+                2》实例化并保存对象到intent中（和保存普通数据类型数据操作相同）
+                    person person1 = new person("Tom", 20);
+                    Intent intent = new Intent();
+                    intent.putExtra("Tom", person1);
+                    ...
+                3》在被启动 Activity 中获取对象 ；getSerializableExtra() 方法
+                    person person1 = getIntent().getSerializableExtra("Tom");
+
+                4》利用这种方式传输，只是传递了数据，对象并不是同一个对象
+
+            2】Parcelable 方式
+                1）代码示例如下 ：
+                    public class human implements Parcelable {
+                        private String name;
+                        private int age;
+
+                        protected human(Parcel in) {
+                            // 读取的顺序必须和写入的顺序相同
+                            name = in.readString();
+                            age = in.readInt();
+                        }
+
+                        // 泛型指定为 创建的类 的 类型
+                        public static final Creator<human> CREATOR = new Creator<human>() {
+                            @Override
+                            public human createFromParcel(Parcel in) {
+                                return new human(in);
+                            }
+
+                            // 创建空的 human 数组
+                            @Override
+                            public human[] newArray(int size) {
+                                return new human[size];
+                            }
+                        };
+
+                        @Override
+                        public int describeContents() {
+                            return 0;
+                        }
+
+                        // 将 human 中的字段一一写出
+                        // 字符串用 writeString()
+                        // 整形用 writeInt()
+                        @Override
+                        public void writeToParcel(Parcel dest, int flags) {
+                            dest.writeString(name);
+                            dest.writeInt(age);
+                        }
+                    }
+
+                2）传递对象与上一个相同
+                3）获取对象
+                    human human1 = getIntent().getParcelableExtra("Tom");
+            3】第二种方式比第一种方式要快一些，所以建议采用第二种、
+    3、定制自己的日子工具
+        1】简介 ：当一个项目足够大之后，会有很多的日志打印，当即将结束开发时去除日志打印是很麻烦的，而我们定制日志工具
+            就可以实现控制日志在开发时打印，在上线后不打印。
+        2】新建一个单例类 LogUtil
+            public class LogUtil {
+
+                public static final int VERBOSE = 1;
+
+                public static final int DEBUG = 2;
+
+                public static final int INFO = 3;
+
+                public static final int WARN = 4;
+
+                public static final int ERROR = 5;
+
+                public static final int NOTHING = 6;
+
+                public static int level = VERBOSE;      //
+
+                public static void v(String tag, String msg) {
+                    if (level <= VERBOSE) {
+                        Log.v(tag, msg);
+                    }
+                }
+
+                public static void d(String tag, String msg) {
+                    if (level <= DEBUG) {
+                        Log.d(tag, msg);
+                    }
+                }
+
+                public static void i(String tag, String msg) {
+                    if (level <= INFO) {
+                        Log.i(tag, msg);
+                    }
+                }
+
+                public static void w(String tag, String msg) {
+                    if (level <= WARN) {
+                        Log.w(tag, msg);
+                    }
+                }
+
+                public static void e(String tag, String msg) {
+                    if (level <= ERROR) {
+                        Log.e(tag, msg);
+                    }
+                }
+            }
+
+            使用时调用 LogUtil 的方法即可，只需要更改 level 的值就可以控制日志是否打印
+
+    4、调试 Android 程序
+        1】运行虚拟机然后运行一个 module
+        2】Debug 调试 ：
+            1）跳转到下一个断点 ：F8
+        3】Attach Debugger to Android Process 模式 ：
+            1）准备阶段结束后，点击 Attach Debugger to Android Process 选择对应的进程进入调试模式
+            2）在虚拟机或实体机进行操作，会直接进入 Debug 窗口
+
+    5、深色主题
+        1】简介 ：Android 以浅色主题为主，但是在夜晚光线关闭的情况下使用会比较刺眼，我们可以在应用内部加入一个
+            一键切换夜间模式的按钮，当用户点击按钮可以切换到夜间模式，应用整体色调会调整成深色模式
+        2】支持 ：
+            Android 10.0 开始系统支持深色（夜间）模式，他会将使用者的手机切换到深色模式，但是需要应用程序支持才行，
+          否则不支持的程序仍然是浅色模式（Android10 以上可以直接切换），所以开发应用时，需要让应用支持夜间模式。
+        3】使用 ：
+            1）Force Dark（自动启动夜间模式）
+                1》简介 ：让应用程序快速适配深色主题，几乎不需要添加额外代码。它会分析浅色主题下的每一层View，
+                    并且在这些View绘制到屏幕之前，自动将它们的颜色转换为更加适合深色主题的颜色，只有原本使用
+                    的浅色主题的应用才能使用这种方式，如果原本使用的是深色主题将不会起作用。
+                2》使用方法 ：
+                    启用Force Dark 功能需要借助 android:forceDarkAllow 属性，这个属性从API 29（android10）
+                  开始才开始被使用，所以需要进行系统差异性编程。
+                    在 res 目录下创建 values-v29 目录，在它里面创建一个 styles.xml 文件，编写如下示例代码 ;
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <resources>
+                            <style name="AppTheme"
+                                parent="Theme.AppCompat.Light.NoActionBar">
+                                <item name="colorPrimary">@color/colorPrimary</item>
+                                <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+                                <item name="colorAccent">@color/colorAccent</item>
+                                // 允许应用被强制转换成深色主题
+                                <item name="android:forceDarkAllowed">true</item>
+                            </style>
+                        </resources>
+            2）手动实现夜间模式
+                1》简介 ：由于自动转换给用户的体验并不是很好，所以我们应该在设计界面时设计浅色和深色两种布局。
+                2》使用 :
+                    1-- 通过编写 DayNight 主题来实现 ：它会在我们开启夜间模式时起作用(代码如下)
+                        // 设置为夜间模式（会在切换时起作用）
+                        <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+                                <!-- Customize your theme here. -->
+                                <item name="colorPrimary">@color/colorPrimary</item>
+                                <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+                                <item name="colorAccent">@color/colorAccent</item>
+                        </style>
+                3》注意 ：
+                    1-- 说明 ：
+                        在这种情况下，标题栏和悬浮按钮等一些东西还是会保持浅色主题时的一些颜色，这是由于它采
+                      用的我们指定的颜色值，，相当于对控件进行了硬编码，DayNight 不能对这些颜色进行转换，
+                    2-- 解决方案 ：进行差异型编程(本质上还是使用硬编码，只不过是在不同模式下启用的颜色不一样)
+                        在 res 目录下创建一个 values-night 目录，然后在其中创建 colors.xml (values文件夹
+                      中的其他文件也可以) 来定义颜色值;(代码参考 res -> values-night -> colors.xml )
+                    3-- 我们应该劲量避免使用硬编码的方式指定颜色，应该尽量使用能根据当前主题自动切换颜色的主题属性。
+                        示例 ：
+                            <LinearLayout
+                                ...
+                                android:background="?android:attr/colorBackground">
+
+                            <Button
+                                ...
+                                android:textColor="?android:attr/textColorPrimary"/>
+                            这些主题会根据当前主题模式选择合适的颜色。
+                4》也可以在浅色和深色主题下执行不同的逻辑，只需要添加一个函数判断主题类型即可,例 ：
+                    // 判断当前是否为夜间模式
+                     private Boolean isDarkTheme(Context context) {
+                        int flag = context.getResources().getConfiguration().uiMode &
+                                Configuration.UI_MODE_NIGHT_MASK;
+                        return flag == Configuration.UI_MODE_NIGHT_YES;
+                     }
 
 
 

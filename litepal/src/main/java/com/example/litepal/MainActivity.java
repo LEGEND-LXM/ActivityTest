@@ -2,6 +2,8 @@ package com.example.litepal;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -106,4 +108,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    private Boolean isDarkTheme(Context context) {
+        int flag = context.getResources().getConfiguration().uiMode &
+                Configuration.UI_MODE_NIGHT_MASK;
+        return flag == Configuration.UI_MODE_NIGHT_YES;
+    }
+
 }
